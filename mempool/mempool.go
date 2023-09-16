@@ -4,7 +4,7 @@ import (
 	"math/rand"
 )
 
-type Backend struct {
+type Mempool struct {
 	txns []Transaction
 }
 
@@ -49,8 +49,8 @@ func transactionGenerator(numberOfTransactions int) []Transaction {
 	return transactionList
 }
 
-func NewMemPool() *Backend {
-	return &Backend{
+func NewMemPool() *Mempool {
+	return &Mempool{
 		txns: transactionGenerator(500),
 	}
 }
