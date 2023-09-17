@@ -13,16 +13,22 @@ import (
 type Rotation struct {
 	peerNo int
 	P      float64
+	rng    *rand.Rand
 }
 
 func NewRotation(peerNo int, P float64) *Rotation {
 	src := rand.NewSource(time.Now().UnixNano())
 	rand := rand.New(src)
-	_ = rand.Float64()
+
 	return &Rotation{
 		peerNo: peerNo,
 		P:      P,
+		rng:    rand,
 	}
+}
+
+func (r *Rotation) isLeader(id identity.NodeID) bool {
+	return r.rng.Float64() <= r.P
 }
 
 func (r *Rotation) FindLeaderFor(view int) identity.NodeID {
