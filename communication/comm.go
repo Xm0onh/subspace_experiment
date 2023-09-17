@@ -10,7 +10,7 @@ import (
 
 type Comm interface {
 	Send(interface{})
-	Recv(interface{})
+	Recv() interface{}
 	Dial() error
 	Listen()
 	Close()
@@ -49,8 +49,8 @@ func (c *communication) Send(msg interface{}) {
 	c.send <- msg
 }
 
-func (c *communication) Recv(msg interface{}) {
-	c.recv <- msg
+func (c *communication) Recv() (msg interface{}) {
+	return <-c.recv
 }
 
 func (c *communication) Close() {
