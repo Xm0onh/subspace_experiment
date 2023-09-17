@@ -3,11 +3,13 @@ package operator
 import (
 	"net/http"
 
+	"github.com/xm0onh/subspace_experiment/election"
 	"github.com/xm0onh/subspace_experiment/identity"
 	"github.com/xm0onh/subspace_experiment/mempool"
 )
 
 type Operator struct {
+	election.Election
 	id      identity.NodeID
 	txRange int
 	mem     *mempool.Producer
