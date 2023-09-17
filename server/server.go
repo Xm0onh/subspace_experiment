@@ -7,13 +7,13 @@ import (
 	"github.com/xm0onh/subspace_experiment"
 	"github.com/xm0onh/subspace_experiment/config"
 	"github.com/xm0onh/subspace_experiment/identity"
-	"github.com/xm0onh/subspace_experiment/operator"
+	"github.com/xm0onh/subspace_experiment/replica"
 )
 
 func initOperator(id identity.NodeID) {
 	fmt.Println("init operator", id)
-	o := operator.NewOperator(id)
-	o.Start()
+	r := replica.NewReplica(id)
+	r.Start()
 }
 func main() {
 	subspace_experiment.Init()

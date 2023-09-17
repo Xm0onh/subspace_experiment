@@ -8,16 +8,16 @@ import (
 type Block struct {
 	Proposer identity.NodeID
 	// Sig
-	view    int
+	View    int
 	ID      int
 	PrevID  int
-	Payload []*mempool.Transaction
+	Payload []mempool.Transaction
 }
 
-func NewBlock(proposer identity.NodeID, view, id, prevID int, payload []*mempool.Transaction) *Block {
+func NewBlock(proposer identity.NodeID, view, id, prevID int, payload []mempool.Transaction) *Block {
 	b := new(Block)
 	b.Proposer = proposer
-	b.view = view
+	b.View = view
 	b.ID = id
 	b.PrevID = prevID
 	b.Payload = payload

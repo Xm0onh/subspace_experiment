@@ -9,7 +9,7 @@ import (
 	"github.com/xm0onh/subspace_experiment/log"
 )
 
-func (o *Operator) http() {
+func (o *operator) http() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", o.report)
 	ip, err := url.Parse(config.Configuration.HTTPAddrs[o.id])
@@ -25,7 +25,7 @@ func (o *Operator) http() {
 	log.Fatal(o.server.ListenAndServe())
 }
 
-func (o *Operator) report(w http.ResponseWriter, r *http.Request) {
+func (o *operator) report(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, o.txRange)
 	for i := 0; i < 2; i++ {
 		fmt.Fprintln(w, o.mem.GetTransactions())

@@ -2,29 +2,89 @@ package operator
 
 import (
 	"net/http"
+	"reflect"
 
-	"github.com/xm0onh/subspace_experiment/election"
 	"github.com/xm0onh/subspace_experiment/identity"
+	"github.com/xm0onh/subspace_experiment/log"
 	"github.com/xm0onh/subspace_experiment/mempool"
+	"github.com/xm0onh/subspace_experiment/socket"
 )
 
-type Operator struct {
-	election.Election
-	id      identity.NodeID
-	txRange int
-	mem     *mempool.Producer
-	server  *http.Server
+type Operator interface {
+	socket.Socket
+
+	ID() identity.NodeID
+	Run()
+	Register(m interface{}, f interface{})
+}
+type operator struct {
+	socket.Socket
+	id identity.NodeID
+
+	MessageChan chan interface{}
+	TxChan      chan interface{}
+	txRange     int
+	handles     map[string]reflect.Value
+	mem         *mempool.Producer
+	server      *http.Server
 }
 
-func NewOperator(id identity.NodeID) *Operator {
-	o := new(Operator)
-	o.id = id
-	// Must be set based on the formula
-	o.txRange = 500
-	o.mem = mempool.NewProducer()
-	return o
+func NewOperator(id identity.NodeID) Operator {
+
+	return &operator{
+		id:          id,
+		MessageChan: make(chan interface{}, 10240),
+		TxChan:      make(chan interface{}, 10240),
+		txRange:     500,
+		handles:     make(map[string]reflect.Value),
+		mem:         mempool.NewProducer(),
+	}
 }
 
-func (o *Operator) Start() {
+func (o *operator) ID() identity.NodeID {
+	return o.id
+}
+
+func (o *operator) Run() {
+	log.Infof("node %v start running", o.id)
+	if len(o.handles) > 0 {
+		go o.handle()
+		go o.recv()
+	}
 	o.http()
+}
+
+func (o *operator) Register(m interface{}, f interface{}) {
+	t := reflect.TypeOf(m)
+	fn := reflect.ValueOf(f)
+	if fn.Kind() != reflect.Func {
+		panic("handle function is not func")
+	}
+
+	if fn.Type().In(0) != t {
+		panic("func type is not t")
+	}
+
+	if fn.Kind() != reflect.Func || fn.Type().NumIn() != 1 || fn.Type().In(0) != t {
+		panic("register handle function error")
+	}
+	o.handles[t.String()] = fn
+}
+
+func (o *operator) recv() {
+	// Todo
+}
+
+// handle receives messages from message channel and calls handle function using refection
+func (o *operator) handle() {
+	for {
+		msg := <-o.MessageChan
+		v := reflect.ValueOf(msg)
+		name := v.Type().String()
+		f, exists := o.handles[name]
+		if !exists {
+			log.Fatalf("no registered handle function for message type %v", name)
+		}
+		f.Call([]reflect.Value{v})
+	}
 }
