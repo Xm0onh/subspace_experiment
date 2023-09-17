@@ -9,3 +9,7 @@ func NewProducer() *Producer {
 		mempool: NewMemPool(),
 	}
 }
+
+func (p *Producer) GetTransactions() []Transaction {
+	return p.mempool.GetTx()
+}

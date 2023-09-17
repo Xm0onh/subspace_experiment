@@ -55,8 +55,6 @@ func NewMemPool() *Mempool {
 	}
 }
 
-// func (b *Backend) inserBack(txn *Txn) {
-// 	if txn == nul {
-// 		return
-// 	}
-// }
+func (m *Mempool) GetTx() []Transaction {
+	return m.txns[0:2]
+}

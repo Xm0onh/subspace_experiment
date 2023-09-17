@@ -11,7 +11,7 @@ import (
 
 func (o *Operator) http() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", report)
+	mux.HandleFunc("/", o.report)
 	ip, err := url.Parse(config.Configuration.HTTPAddrs[o.id])
 	if err != nil {
 		log.Fatal("http url parse error: ", err)
@@ -25,6 +25,10 @@ func (o *Operator) http() {
 	log.Fatal(o.server.ListenAndServe())
 }
 
-func report(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello, world!")
+func (o *Operator) report(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, o.txRange)
+	for i := 0; i < 2; i++ {
+		fmt.Fprintln(w, o.mem.GetTransactions())
+	}
+
 }
