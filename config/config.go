@@ -2,17 +2,12 @@ package config
 
 import (
 	"bufio"
-	"encoding/json"
-	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 
 	"github.com/xm0onh/subspace_experiment/identity"
 )
-
-var configFile = flag.String("config", "config.json", "Configuration file for Subspace Experiment config.json.")
 
 type Config struct {
 	Addrs     map[identity.NodeID]string `json:"addrs"`
@@ -21,22 +16,18 @@ type Config struct {
 	n int // total number of nodes
 }
 
-func (c *Config) Load() {
-	file, err := os.Open(*configFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	decoder := json.NewDecoder(file)
-	err = decoder.Decode(c)
-	if err != nil {
-		log.Fatal(err)
-	}
+var Configuration Config
 
+func (c *Config) Load() {
+
+	c.Addrs = make(map[identity.NodeID]string)
+	c.HTTPAddrs = make(map[identity.NodeID]string)
 	// load ips
 	ip_file, err := os.Open("ips.txt")
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	defer ip_file.Close()
 
 	scanner := bufio.NewScanner(ip_file)
@@ -57,4 +48,7 @@ func (c *Config) Load() {
 	}
 
 	c.n = len(c.Addrs)
+}
+func GetConfig() Config {
+	return Configuration
 }
