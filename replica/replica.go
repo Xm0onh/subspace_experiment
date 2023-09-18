@@ -2,7 +2,6 @@ package replica
 
 import (
 	"encoding/gob"
-	"fmt"
 	"sync/atomic"
 	"time"
 
@@ -39,16 +38,15 @@ func NewReplica(id identity.NodeID) *Replica {
 	r.start = make(chan bool)
 	r.eventChan = make(chan interface{})
 	r.committedBlocks = make(chan *blockchain.Block, 1000)
+	r.Register(blockchain.Block{}, r.HandleBlock)
 	gob.Register(blockchain.Block{})
-	gob.Register([]string{})
+
 	r.Inter = blockchain.NewSubpace(r.Operator, r.Election, r.committedBlocks)
 	return r
 }
 
 func (r *Replica) startSignal() {
-	fmt.Println("start signal")
 	if !r.isStarted.Load() {
-		fmt.Println("Started!")
 		r.isStarted.Store(true)
 		log.Infof("Is Started = True")
 		r.start <- true
@@ -76,12 +74,11 @@ func (r *Replica) processNewView(view int) {
 	r.proposeBlock(view)
 }
 
-func (r *Replica) proposeBlock(view int) *blockchain.Block {
+func (r *Replica) proposeBlock(view int) {
 	// r.totalBlockSize += len(block.Payload)
 	block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
-	r.roundNo++
-	// r.Broadcast([]string{"test"})
-	return block
+	r.Broadcast(block)
+	_ = r.Inter.ProcessBlock(block)
 }
 
 func (r *Replica) Start() {
@@ -90,12 +87,15 @@ func (r *Replica) Start() {
 	// if r.ID() == node_zero {
 	// 	r.proposeBlock(0)
 	// }
-	v := 0
+	time.Sleep(1 * time.Second)
+	l := r.Inter.GetLeaderForFirstRound(0)
+	r.proposeBlock(l.Node())
 	for {
-		block := r.proposeBlock(v)
-		r.Inter.ProcessBlock(block)
-		time.Sleep(1 * time.Second)
-		v++
+		event := <-r.eventChan
+		switch v := event.(type) {
+		case blockchain.Block:
+			r.processNewView(v.View + 1)
+		}
 	}
 
 }

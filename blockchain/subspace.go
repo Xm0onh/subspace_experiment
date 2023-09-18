@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"github.com/xm0onh/subspace_experiment/election"
+	"github.com/xm0onh/subspace_experiment/identity"
 	"github.com/xm0onh/subspace_experiment/log"
 	"github.com/xm0onh/subspace_experiment/operator"
 )
@@ -36,4 +37,8 @@ func (s *Subspace) ProcessBlock(block *Block) error {
 
 func (s *Subspace) GetView() int {
 	return s.bc.view
+}
+
+func (s *Subspace) GetLeaderForFirstRound(view int) identity.NodeID {
+	return s.FindLeaderFor(view)
 }

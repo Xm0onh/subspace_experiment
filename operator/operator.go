@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 
@@ -48,18 +47,19 @@ func (o *operator) ID() identity.NodeID {
 
 func (o *operator) Run() {
 	log.Infof("node %v start running", o.id)
-	// if len(o.handles) > 0 {
-	// 	go o.handle()
+	if len(o.handles) > 0 {
+		go o.handle()
+		go o.recv()
+	}
 
-	// }
-	go o.recv()
 	o.http()
 }
 
 func (o *operator) recv() {
 	for {
 		msg := o.Recv()
-		fmt.Println("I am ", o.id, "and got the message", msg)
+		o.MessageChan <- msg
+		// fmt.Println("I am ", o.id, "and got the message", msg)
 	}
 }
 

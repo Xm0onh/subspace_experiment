@@ -10,8 +10,8 @@ import (
 )
 
 type IComm interface {
-	Send([]string)
-	Recv() []string
+	Send(interface{})
+	Recv() interface{}
 	Dial() error
 	Listen()
 	Close()
@@ -19,8 +19,8 @@ type IComm interface {
 
 type communication struct {
 	uri         *url.URL
-	sendAndRecv chan []string
-	recv        chan []string
+	sendAndRecv chan interface{}
+	recv        chan interface{}
 	close       chan struct{}
 }
 
@@ -36,8 +36,8 @@ func NewComm(addr string) IComm {
 
 	communication := &communication{
 		uri:         uri,
-		sendAndRecv: make(chan []string, 10240),
-		recv:        make(chan []string, 10240),
+		sendAndRecv: make(chan interface{}, 10240),
+		recv:        make(chan interface{}, 10240),
 		close:       make(chan struct{}),
 	}
 
@@ -46,14 +46,13 @@ func NewComm(addr string) IComm {
 	return c
 }
 
-func (c *communication) Send(msg []string) {
-	c.sendAndRecv <- msg
+func (c *communication) Send(m interface{}) {
+	c.sendAndRecv <- m
 	c.Dial()
 }
 
-func (c *communication) Recv() (msg []string) {
+func (c *communication) Recv() (m interface{}) {
 	msg, ok := <-c.recv
-	fmt.Println("Message Received", ok)
 	if !ok {
 		return nil
 	}
@@ -74,7 +73,6 @@ func (c *communication) Dial() error {
 		encode := gob.NewEncoder(conn)
 		defer conn.Close()
 		for m := range c.sendAndRecv {
-			fmt.Println(m)
 			err := encode.Encode(&m)
 			if err != nil {
 				log.Fatal("error encoding message: ", err)
@@ -105,14 +103,14 @@ func (t *tcp) Listen() {
 			}
 			go func(conn net.Conn) {
 				defer conn.Close()
-				var msg []string
+				var m interface{}
 				decoder := gob.NewDecoder(conn)
-				err := decoder.Decode(&msg)
+				err := decoder.Decode(&m)
 				if err != nil {
 					log.Error("Error decoding message: ", err)
 					return
 				}
-				t.recv <- msg
+				t.recv <- m
 			}(conn)
 		}
 	}(listener)
