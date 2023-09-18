@@ -41,7 +41,7 @@ func NewReplica(id identity.NodeID) *Replica {
 	gob.Register(blockchain.Block{})
 
 	r.Inter = blockchain.NewSubpace(r.Operator, r.Election, r.committedBlocks)
-	fmt.Println(r.Inter.GetView())
+	fmt.Println(r.Election)
 	return r
 }
 
@@ -70,7 +70,7 @@ func (r *Replica) ListenCommittedBlocks() {
 
 func (r *Replica) processNewView(view int) {
 	log.Debugf("[%v] is processing new view: %v, leader is %v", r.ID(), view, r.FindLeaderFor(view))
-	if !r.IsLeader(r.ID()) {
+	if r.GetLeader() != r.ID() {
 		return
 	}
 	r.proposeBlock(view)
@@ -78,9 +78,9 @@ func (r *Replica) processNewView(view int) {
 
 func (r *Replica) proposeBlock(view int) {
 	// r.totalBlockSize += len(block.Payload)
-	block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
+	// block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
 	r.roundNo++
-	r.Broadcast(block)
+	r.Broadcast([]string{"test"})
 }
 
 func (r *Replica) Start() {

@@ -3,6 +3,7 @@ package election
 import (
 	"crypto/sha1"
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"strconv"
 	"time"
@@ -14,6 +15,7 @@ type Rotation struct {
 	peerNo int
 	P      float64
 	rng    *rand.Rand
+	leader identity.NodeID
 }
 
 func NewRotation(peerNo int, P float64) *Rotation {
@@ -27,8 +29,9 @@ func NewRotation(peerNo int, P float64) *Rotation {
 	}
 }
 
-func (r *Rotation) IsLeader(id identity.NodeID) bool {
-	return r.rng.Float64() <= r.P
+func (r *Rotation) GetLeader() identity.NodeID {
+	fmt.Println(r.leader)
+	return r.leader
 }
 
 func (r *Rotation) FindLeaderFor(view int) identity.NodeID {

@@ -3,6 +3,6 @@ package election
 import "github.com/xm0onh/subspace_experiment/identity"
 
 type Election interface {
-	IsLeader(id identity.NodeID) bool
+	GetLeader() identity.NodeID
 	FindLeaderFor(view int) identity.NodeID
 }

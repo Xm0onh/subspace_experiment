@@ -26,6 +26,7 @@ func (s *Subspace) ProcessBlock(block *Block) error {
 		return nil
 	}
 	s.bc.AddBlock(block)
+	_ = s.FindLeaderFor(s.bc.view + 1)
 	return nil
 }
 

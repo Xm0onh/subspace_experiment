@@ -9,8 +9,8 @@ import (
 )
 
 type IComm interface {
-	Send(interface{})
-	Recv() interface{}
+	Send([]string)
+	Recv() []string
 	// Dial() error
 	// Listen()
 	Close()
@@ -18,8 +18,8 @@ type IComm interface {
 
 type communication struct {
 	uri   *url.URL
-	send  chan interface{}
-	recv  chan interface{}
+	send  chan []string
+	recv  chan []string
 	close chan struct{}
 }
 
@@ -35,8 +35,8 @@ func NewComm(addr string) IComm {
 
 	communication := &communication{
 		uri:   uri,
-		send:  make(chan interface{}, 10240),
-		recv:  make(chan interface{}, 10240),
+		send:  make(chan []string, 10240),
+		recv:  make(chan []string, 10240),
 		close: make(chan struct{}),
 	}
 
@@ -45,11 +45,11 @@ func NewComm(addr string) IComm {
 	return c
 }
 
-func (c *communication) Send(msg interface{}) {
+func (c *communication) Send(msg []string) {
 	c.send <- msg
 }
 
-func (c *communication) Recv() (msg interface{}) {
+func (c *communication) Recv() (msg []string) {
 	return <-c.recv
 }
 
@@ -108,7 +108,7 @@ func (t *tcp) Listen() {
 							log.Fatal("error decoding message: ", err)
 							continue
 						}
-						t.recv <- msg
+						t.recv <- []string{msg.(string)}
 					}
 				}
 			}(conn)

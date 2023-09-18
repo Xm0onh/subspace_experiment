@@ -9,9 +9,9 @@ import (
 )
 
 type Socket interface {
-	Send(to identity.NodeID, msg interface{})
-	Broadcast(msg interface{})
-	Recv() interface{}
+	Send(to identity.NodeID, msg []string)
+	Broadcast(msg []string)
+	Recv() []string
 	Close()
 }
 type socket struct {
@@ -35,7 +35,7 @@ func NewSocket(id identity.NodeID, addrs map[identity.NodeID]string) Socket {
 	return socket
 }
 
-func (s *socket) Send(to identity.NodeID, msg interface{}) {
+func (s *socket) Send(to identity.NodeID, msg []string) {
 	s.lock.RLock()
 	c, exists := s.nodes[to]
 	defer s.lock.RUnlock()
@@ -54,7 +54,7 @@ func (s *socket) Send(to identity.NodeID, msg interface{}) {
 	c.Send(msg)
 }
 
-func (s *socket) Recv() interface{} {
+func (s *socket) Recv() []string {
 	s.lock.RLock()
 	c := s.nodes[s.id]
 	s.lock.RUnlock()
@@ -64,7 +64,7 @@ func (s *socket) Recv() interface{} {
 	}
 }
 
-func (s *socket) Broadcast(m interface{}) {
+func (s *socket) Broadcast(m []string) {
 	for id := range s.addresses {
 		if id == s.id {
 			continue
