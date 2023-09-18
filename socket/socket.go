@@ -8,21 +8,17 @@ import (
 	"github.com/xm0onh/subspace_experiment/log"
 )
 
-type socket struct {
-	id        identity.NodeID
-	addresses map[identity.NodeID]string
-	nodes     map[identity.NodeID]comm.Comm
-
-	lock sync.RWMutex
-}
-
 type Socket interface {
 	Send(to identity.NodeID, msg interface{})
-
-	// Broadcast send to all peers
 	Broadcast(msg interface{})
 	Recv() interface{}
 	Close()
+}
+type socket struct {
+	id        identity.NodeID
+	addresses map[identity.NodeID]string
+	nodes     map[identity.NodeID]comm.IComm
+	lock      sync.RWMutex
 }
 
 func NewSocket(id identity.NodeID, addrs map[identity.NodeID]string) Socket {
@@ -30,18 +26,18 @@ func NewSocket(id identity.NodeID, addrs map[identity.NodeID]string) Socket {
 	socket := &socket{
 		id:        id,
 		addresses: addrs,
-		nodes:     make(map[identity.NodeID]comm.Comm),
+		nodes:     make(map[identity.NodeID]comm.IComm),
 	}
 
 	socket.nodes[id] = comm.NewComm(addrs[id])
-	socket.nodes[id].Listen()
+	// socket.nodes[id].Listen()
 
 	return socket
 }
 
 func (s *socket) Send(to identity.NodeID, msg interface{}) {
 	s.lock.RLock()
-	t, exists := s.nodes[to]
+	c, exists := s.nodes[to]
 	defer s.lock.RUnlock()
 	if !exists {
 		s.lock.RLock()
@@ -50,20 +46,20 @@ func (s *socket) Send(to identity.NodeID, msg interface{}) {
 			log.Errorf("socket does not have address of node %s", to)
 			return
 		}
-		t = comm.NewComm(address)
+		c = comm.NewComm(address)
 		s.lock.Lock()
-		s.nodes[to] = t
+		s.nodes[to] = c
 		s.lock.Unlock()
 	}
-	t.Send(msg)
+	c.Send(msg)
 }
 
 func (s *socket) Recv() interface{} {
 	s.lock.RLock()
-	t := s.nodes[s.id]
+	c := s.nodes[s.id]
 	s.lock.RUnlock()
 	for {
-		m := t.Recv()
+		m := c.Recv()
 		return m
 	}
 }
@@ -78,7 +74,7 @@ func (s *socket) Broadcast(m interface{}) {
 }
 
 func (s *socket) Close() {
-	for _, t := range s.nodes {
-		t.Close()
+	for _, c := range s.nodes {
+		c.Close()
 	}
 }

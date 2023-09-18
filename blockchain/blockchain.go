@@ -8,7 +8,7 @@ type Blockchain struct {
 	view                int
 }
 
-func NewBlockchain(n int) *Blockchain {
+func NewBlockchain() *Blockchain {
 	bc := new(Blockchain)
 	return bc
 }

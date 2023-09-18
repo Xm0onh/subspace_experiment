@@ -20,7 +20,6 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	for id := range config.GetConfig().Addrs {
-		fmt.Println(id)
 		go initOperator(id)
 	}
 	wg.Wait()

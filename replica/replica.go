@@ -24,6 +24,7 @@ type Replica struct {
 	roundNo          int
 	totalCommittedTx int
 	totalBlockSize   int
+	Inter
 }
 
 func NewReplica(id identity.NodeID) *Replica {
@@ -31,14 +32,16 @@ func NewReplica(id identity.NodeID) *Replica {
 	r.Operator = operator.NewOperator(id)
 
 	//Election - TBD
-	// r.Election = election.NewRotation(3, 0.1)
+	r.Election = election.NewRotation(3, 0.3)
 
 	r.mem = mempool.NewProducer()
 	r.start = make(chan bool)
 	r.eventChan = make(chan interface{})
-	r.committedBlocks = make(chan *blockchain.Block, 100)
+	r.committedBlocks = make(chan *blockchain.Block, 1000)
 	gob.Register(blockchain.Block{})
 
+	r.Inter = blockchain.NewSubpace(r.Operator, r.Election, r.committedBlocks)
+	fmt.Println(r.Inter.GetView())
 	return r
 }
 
@@ -67,7 +70,7 @@ func (r *Replica) ListenCommittedBlocks() {
 
 func (r *Replica) processNewView(view int) {
 	log.Debugf("[%v] is processing new view: %v, leader is %v", r.ID(), view, r.FindLeaderFor(view))
-	if !r.IsLeader(r.ID(), view) {
+	if !r.IsLeader(r.ID()) {
 		return
 	}
 	r.proposeBlock(view)
@@ -82,18 +85,4 @@ func (r *Replica) proposeBlock(view int) {
 
 func (r *Replica) Start() {
 	go r.Run()
-	r.startSignal()
-	<-r.start
-	// go r.ListenLocalEvent()
-	// go r.ListenCommittedBlocks()
-
-	for r.isStarted.Load() {
-		event := <-r.eventChan
-		fmt.Println("hi", event)
-		switch v := event.(type) {
-		case int:
-			r.processNewView(v)
-
-		}
-	}
 }

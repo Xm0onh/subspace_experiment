@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/xm0onh/subspace_experiment/config"
 	"github.com/xm0onh/subspace_experiment/identity"
 	"github.com/xm0onh/subspace_experiment/log"
 	"github.com/xm0onh/subspace_experiment/mempool"
@@ -33,6 +34,7 @@ func NewOperator(id identity.NodeID) Operator {
 
 	return &operator{
 		id:          id,
+		Socket:      socket.NewSocket(id, config.Configuration.HTTPAddrs),
 		MessageChan: make(chan interface{}, 10240),
 		TxChan:      make(chan interface{}, 10240),
 		txRange:     500,

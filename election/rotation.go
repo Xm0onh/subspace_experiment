@@ -27,7 +27,7 @@ func NewRotation(peerNo int, P float64) *Rotation {
 	}
 }
 
-func (r *Rotation) isLeader(id identity.NodeID) bool {
+func (r *Rotation) IsLeader(id identity.NodeID) bool {
 	return r.rng.Float64() <= r.P
 }
 

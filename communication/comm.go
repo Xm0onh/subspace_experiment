@@ -8,11 +8,11 @@ import (
 	"github.com/xm0onh/subspace_experiment/log"
 )
 
-type Comm interface {
+type IComm interface {
 	Send(interface{})
 	Recv() interface{}
-	Dial() error
-	Listen()
+	// Dial() error
+	// Listen()
 	Close()
 }
 
@@ -27,7 +27,7 @@ type tcp struct {
 	*communication
 }
 
-func NewComm(addr string) Comm {
+func NewComm(addr string) IComm {
 	uri, err := url.Parse(addr)
 	if err != nil {
 		log.Fatalf("error parsing address $s : $s\n", addr, err)
