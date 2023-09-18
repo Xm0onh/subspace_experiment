@@ -1,8 +1,7 @@
 package comm
 
 import (
-	"encoding/gob"
-	"net"
+	"fmt"
 	"net/url"
 
 	"github.com/xm0onh/subspace_experiment/log"
@@ -17,10 +16,10 @@ type IComm interface {
 }
 
 type communication struct {
-	uri   *url.URL
-	send  chan []string
-	recv  chan []string
-	close chan struct{}
+	uri         *url.URL
+	sendAndRecv chan []string
+	recv        chan []string
+	close       chan struct{}
 }
 
 type tcp struct {
@@ -34,10 +33,10 @@ func NewComm(addr string) IComm {
 	}
 
 	communication := &communication{
-		uri:   uri,
-		send:  make(chan []string, 10240),
-		recv:  make(chan []string, 10240),
-		close: make(chan struct{}),
+		uri:         uri,
+		sendAndRecv: make(chan []string, 10240),
+		recv:        make(chan []string, 10240),
+		close:       make(chan struct{}),
 	}
 
 	c := new(tcp)
@@ -46,72 +45,48 @@ func NewComm(addr string) IComm {
 }
 
 func (c *communication) Send(msg []string) {
-	c.send <- msg
+	c.sendAndRecv <- msg
+	fmt.Println("Message Broadcasted")
+
 }
 
 func (c *communication) Recv() (msg []string) {
-	return <-c.recv
+	msg = <-c.sendAndRecv
+	fmt.Println("Message Received", msg)
+	return msg
 }
 
 func (c *communication) Close() {
 	close(c.close)
 }
 
-func (c *communication) Dial() error {
-	conn, err := net.Dial("tcp", c.uri.Host)
-	if err != nil {
-		return err
-	}
-	go func(conn net.Conn) {
-		encode := gob.NewEncoder(conn)
-		defer conn.Close()
-		for m := range c.send {
-			err := encode.Encode(&m)
-			if err != nil {
-				log.Fatal("error encoding message: ", err)
-			}
-		}
-	}(conn)
+// func (c *communication) Dial() error {
+// 	fmt.Println("dialing ", c.uri.Host)
+// 	conn, err := net.Dial("tcp", c.uri.Host)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	go func(conn net.Conn) {
+// 		encode := gob.NewEncoder(conn)
+// 		defer conn.Close()
+// 		for m := range c.sendAndRecv {
+// 			fmt.Println(m)
+// 			err := encode.Encode(&m)
+// 			if err != nil {
+// 				log.Fatal("error encoding message: ", err)
+// 			}
+// 		}
+// 	}(conn)
 
-	return nil
-}
+// 	return nil
+// }
 
-/// TCP Listener
+// /// TCP Listener
 
-func (t *tcp) Listen() {
-	log.Debug("listening on ", t.uri.Port())
-	listener, err := net.Listen("tcp", ":"+t.uri.Port())
-	if err != nil {
-		log.Fatal("TCP error listening: ", err)
-	}
-
-	go func(listener net.Listener) {
-		defer listener.Close()
-		for {
-			conn, err := listener.Accept()
-			if err != nil {
-				log.Fatal("TCP error accepting: ", err)
-				continue
-			}
-
-			go func(conn net.Conn) {
-				decoder := gob.NewDecoder(conn)
-				defer conn.Close()
-				for {
-					select {
-					case <-t.close:
-						return
-					default:
-						var msg interface{}
-						err := decoder.Decode(&msg)
-						if err != nil {
-							log.Fatal("error decoding message: ", err)
-							continue
-						}
-						t.recv <- []string{msg.(string)}
-					}
-				}
-			}(conn)
-		}
-	}(listener)
-}
+// func (t *tcp) Listen() {
+// 	log.Debug("listening on ", t.uri.Port())
+// 	_, err := net.Listen("tcp", ":"+t.uri.Port())
+// 	if err != nil {
+// 		log.Fatal("TCP error listening: ", err)
+// 	}
+// }

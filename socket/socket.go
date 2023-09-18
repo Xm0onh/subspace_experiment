@@ -38,10 +38,10 @@ func NewSocket(id identity.NodeID, addrs map[identity.NodeID]string) Socket {
 func (s *socket) Send(to identity.NodeID, msg []string) {
 	s.lock.RLock()
 	c, exists := s.nodes[to]
-	defer s.lock.RUnlock()
+	address, ok := s.addresses[to]
+	s.lock.RUnlock()
+
 	if !exists {
-		s.lock.RLock()
-		address, ok := s.addresses[to]
 		if !ok {
 			log.Errorf("socket does not have address of node %s", to)
 			return
@@ -51,6 +51,7 @@ func (s *socket) Send(to identity.NodeID, msg []string) {
 		s.nodes[to] = c
 		s.lock.Unlock()
 	}
+
 	c.Send(msg)
 }
 

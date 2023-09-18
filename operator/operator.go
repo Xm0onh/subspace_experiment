@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -13,15 +14,14 @@ import (
 
 type Operator interface {
 	socket.Socket
-
 	ID() identity.NodeID
 	Run()
+	Recevie()
 	Register(m interface{}, f interface{})
 }
 type operator struct {
 	socket.Socket
-	id identity.NodeID
-
+	id          identity.NodeID
 	MessageChan chan interface{}
 	TxChan      chan interface{}
 	txRange     int
@@ -49,10 +49,11 @@ func (o *operator) ID() identity.NodeID {
 
 func (o *operator) Run() {
 	log.Infof("node %v start running", o.id)
-	if len(o.handles) > 0 {
-		go o.handle()
-		go o.recv()
-	}
+	// if len(o.handles) > 0 {
+	// 	go o.handle()
+
+	// }
+	// go o.recv()
 	o.http()
 }
 
@@ -73,8 +74,11 @@ func (o *operator) Register(m interface{}, f interface{}) {
 	o.handles[t.String()] = fn
 }
 
-func (o *operator) recv() {
-	// Todo
+func (o *operator) Recevie() {
+	for {
+		msg := o.Recv()
+		fmt.Println("I am ", o.id, "and got the message", msg)
+	}
 }
 
 // handle receives messages from message channel and calls handle function using refection

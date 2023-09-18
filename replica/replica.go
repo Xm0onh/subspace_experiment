@@ -41,7 +41,6 @@ func NewReplica(id identity.NodeID) *Replica {
 	gob.Register(blockchain.Block{})
 
 	r.Inter = blockchain.NewSubpace(r.Operator, r.Election, r.committedBlocks)
-	fmt.Println(r.Election)
 	return r
 }
 
@@ -85,4 +84,6 @@ func (r *Replica) proposeBlock(view int) {
 
 func (r *Replica) Start() {
 	go r.Run()
+	go r.Broadcast([]string{"test"})
+	go r.Recevie()
 }
