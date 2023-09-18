@@ -6,7 +6,8 @@ import (
 )
 
 type Inter interface {
-	ProcessBlock(block *blockchain.Block) error
+	ProcessBlock(proposer identity.NodeID, block *blockchain.Block) error
 	GetView() int
 	GetLeaderForFirstRound(view int) identity.NodeID
+	AmIaLeader() identity.NodeID
 }

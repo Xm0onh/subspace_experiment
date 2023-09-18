@@ -51,7 +51,7 @@ func (s *socket) Send(to identity.NodeID, m interface{}) {
 		s.nodes[to] = c
 		s.lock.Unlock()
 	}
-	c.Send(m)
+	c.Send(s.id, m)
 }
 
 func (s *socket) Recv() interface{} {

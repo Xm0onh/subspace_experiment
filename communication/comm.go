@@ -6,13 +6,14 @@ import (
 	"net"
 	"net/url"
 
+	"github.com/xm0onh/subspace_experiment/identity"
 	"github.com/xm0onh/subspace_experiment/log"
 )
 
 type IComm interface {
-	Send(interface{})
+	Send(identity.NodeID, interface{})
 	Recv() interface{}
-	Dial() error
+	Dial(identity.NodeID) error
 	Listen()
 	Close()
 }
@@ -46,9 +47,9 @@ func NewComm(addr string) IComm {
 	return c
 }
 
-func (c *communication) Send(m interface{}) {
+func (c *communication) Send(from identity.NodeID, m interface{}) {
 	c.sendAndRecv <- m
-	c.Dial()
+	c.Dial(from)
 }
 
 func (c *communication) Recv() (m interface{}) {
@@ -63,8 +64,8 @@ func (c *communication) Close() {
 	close(c.close)
 }
 
-func (c *communication) Dial() error {
-	fmt.Println("dialing ", c.uri.Host)
+func (c *communication) Dial(from identity.NodeID) error {
+	fmt.Println("Node", from, "dialing ", c.uri.Host)
 	conn, err := net.Dial("tcp", c.uri.Host)
 	if err != nil {
 		return err

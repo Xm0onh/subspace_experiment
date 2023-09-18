@@ -2,8 +2,8 @@ package replica
 
 import (
 	"encoding/gob"
+	"fmt"
 	"sync/atomic"
-	"time"
 
 	"github.com/xm0onh/subspace_experiment/blockchain"
 	"github.com/xm0onh/subspace_experiment/election"
@@ -68,28 +68,28 @@ func (r *Replica) ListenCommittedBlocks() {
 
 func (r *Replica) processNewView(view int) {
 	log.Debugf("[%v] is processing new view: %v, leader is %v", r.ID(), view, r.FindLeaderFor(view))
-	if r.GetLeader() != r.ID() {
+	if r.Inter.AmIaLeader() != r.ID() {
+		fmt.Println("I am not the leader")
 		return
 	}
+	fmt.Println("I am the leader")
 	r.proposeBlock(view)
+
 }
 
 func (r *Replica) proposeBlock(view int) {
 	// r.totalBlockSize += len(block.Payload)
+
 	block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
 	r.Broadcast(block)
-	_ = r.Inter.ProcessBlock(block)
+	_ = r.Inter.ProcessBlock(r.ID(), block)
 }
 
 func (r *Replica) Start() {
 	go r.Run()
-	// node_zero := identity.NewNodeID(1)
-	// if r.ID() == node_zero {
-	// 	r.proposeBlock(0)
-	// }
-	time.Sleep(1 * time.Second)
-	l := r.Inter.GetLeaderForFirstRound(0)
-	r.proposeBlock(l.Node())
+	// time.Sleep(1 * time.Second)
+	// l := r.Inter.GetLeaderForFirstRound(1)
+	r.proposeBlock(1)
 	for {
 		event := <-r.eventChan
 		switch v := event.(type) {

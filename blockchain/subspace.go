@@ -23,8 +23,11 @@ func NewSubpace(operator operator.Operator, elec election.Election, committedBlo
 	return s
 }
 
-func (s *Subspace) ProcessBlock(block *Block) error {
+func (s *Subspace) ProcessBlock(proposer identity.NodeID, block *Block) error {
 	if s.bc.view > block.View {
+		return nil
+	}
+	if (proposer != s.Election.GetLeader()) && (s.bc.view != 0) {
 		return nil
 	}
 	s.bc.AddBlock(block)
@@ -38,7 +41,9 @@ func (s *Subspace) ProcessBlock(block *Block) error {
 func (s *Subspace) GetView() int {
 	return s.bc.view
 }
-
+func (s *Subspace) AmIaLeader() identity.NodeID {
+	return s.Election.GetLeader()
+}
 func (s *Subspace) GetLeaderForFirstRound(view int) identity.NodeID {
 	return s.FindLeaderFor(view)
 }
