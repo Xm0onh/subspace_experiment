@@ -51,6 +51,7 @@ func (s *socket) Send(to identity.NodeID, m interface{}) {
 		s.nodes[to] = c
 		s.lock.Unlock()
 	}
+	c.Dial()
 	c.Send(s.id, m)
 }
 

@@ -52,3 +52,7 @@ func (c *Config) Load() {
 func GetConfig() Config {
 	return Configuration
 }
+
+func (c Config) N() int {
+	return c.n
+}

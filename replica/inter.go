@@ -9,5 +9,4 @@ type Inter interface {
 	ProcessBlock(proposer identity.NodeID, block *blockchain.Block) error
 	GetView() int
 	GetLeaderForFirstRound(view int) identity.NodeID
-	AmIaLeader() identity.NodeID
 }

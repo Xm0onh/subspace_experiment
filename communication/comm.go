@@ -3,6 +3,7 @@ package comm
 import (
 	"encoding/gob"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 
@@ -13,7 +14,7 @@ import (
 type IComm interface {
 	Send(identity.NodeID, interface{})
 	Recv() interface{}
-	Dial(identity.NodeID) error
+	Dial() error
 	Listen()
 	Close()
 }
@@ -49,7 +50,7 @@ func NewComm(addr string) IComm {
 
 func (c *communication) Send(from identity.NodeID, m interface{}) {
 	c.sendAndRecv <- m
-	c.Dial(from)
+	// c.Dial()
 }
 
 func (c *communication) Recv() (m interface{}) {
@@ -64,8 +65,8 @@ func (c *communication) Close() {
 	close(c.close)
 }
 
-func (c *communication) Dial(from identity.NodeID) error {
-	fmt.Println("Node", from, "dialing ", c.uri.Host)
+func (c *communication) Dial() error {
+	fmt.Println("dialing ", c.uri.Host)
 	conn, err := net.Dial("tcp", c.uri.Host)
 	if err != nil {
 		return err
@@ -76,7 +77,8 @@ func (c *communication) Dial(from identity.NodeID) error {
 		for m := range c.sendAndRecv {
 			err := encode.Encode(&m)
 			if err != nil {
-				log.Fatal("error encoding message: ", err)
+				fmt.Println("error encoding message: ", err)
+				continue
 			}
 		}
 	}(conn)
@@ -104,15 +106,22 @@ func (t *tcp) Listen() {
 			}
 			go func(conn net.Conn) {
 				defer conn.Close()
-				var m interface{}
 				decoder := gob.NewDecoder(conn)
-				err := decoder.Decode(&m)
-				if err != nil {
-					log.Error("Error decoding message: ", err)
-					return
+				for {
+					var m interface{}
+					err := decoder.Decode(&m)
+					if err != nil {
+						if err == io.EOF {
+							log.Debug("Connection closed by client")
+							return
+						}
+						log.Error("Error decoding message: ", err)
+						return
+					}
+					t.recv <- m
 				}
-				t.recv <- m
 			}(conn)
+
 		}
 	}(listener)
 }

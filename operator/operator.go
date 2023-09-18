@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 
@@ -86,10 +87,12 @@ func (o *operator) handle() {
 		msg := <-o.MessageChan
 		v := reflect.ValueOf(msg)
 		name := v.Type().String()
+		fmt.Println(name)
 		f, exists := o.handles[name]
 		if !exists {
 			log.Fatalf("no registered handle function for message type %v", name)
 		}
+
 		f.Call([]reflect.Value{v})
 	}
 }
