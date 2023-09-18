@@ -51,8 +51,6 @@ func (s *socket) Send(to identity.NodeID, msg []string) {
 		s.nodes[to] = c
 		s.lock.Unlock()
 	}
-	// fmt.Println("address", address)
-	c.SendToTCP("127.0.0.1:8076", msg)
 	c.Send(msg)
 }
 

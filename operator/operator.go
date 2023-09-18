@@ -33,7 +33,7 @@ func NewOperator(id identity.NodeID) Operator {
 
 	return &operator{
 		id:          id,
-		Socket:      socket.NewSocket(id, config.Configuration.HTTPAddrs),
+		Socket:      socket.NewSocket(id, config.Configuration.Addrs),
 		MessageChan: make(chan interface{}, 10240),
 		TxChan:      make(chan interface{}, 10240),
 		txRange:     500,

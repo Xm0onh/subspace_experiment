@@ -46,7 +46,7 @@ func (c *Config) Load() {
 	if err := scanner.Err(); err != nil {
 		fmt.Println(err)
 	}
-
+	fmt.Println("Addrs", c.Addrs)
 	c.n = len(c.Addrs)
 }
 func GetConfig() Config {

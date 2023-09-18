@@ -13,7 +13,6 @@ type IComm interface {
 	Send([]string)
 	Recv() []string
 	Dial() error
-	SendToTCP(string, []string) error
 	Listen()
 	Close()
 }
@@ -49,6 +48,7 @@ func NewComm(addr string) IComm {
 
 func (c *communication) Send(msg []string) {
 	c.sendAndRecv <- msg
+	c.Dial()
 }
 
 func (c *communication) Recv() (msg []string) {
@@ -88,14 +88,9 @@ func (c *communication) Dial() error {
 /// TCP Listener
 
 func (t *tcp) Listen() {
-	var port = "8075"
-	if t.uri.Port() == "8071" {
-		port = "8076"
-	}
-	fmt.Println(t.uri.Port())
-	log.Debug("listening on ", port)
+	log.Debug("listening on ", t.uri.Port())
 
-	listener, err := net.Listen("tcp", ":"+port)
+	listener, err := net.Listen("tcp", ":"+t.uri.Port())
 	if err != nil {
 		log.Fatal("TCP error listening: ", err)
 	}
@@ -121,19 +116,4 @@ func (t *tcp) Listen() {
 			}(conn)
 		}
 	}(listener)
-}
-
-func (c *communication) SendToTCP(address string, msg []string) error {
-	conn, err := net.Dial("tcp", address)
-	if err != nil {
-		return fmt.Errorf("TCP error dialing: %v", err)
-	}
-	defer conn.Close()
-
-	encoder := gob.NewEncoder(conn)
-	err = encoder.Encode(msg)
-	if err != nil {
-		return fmt.Errorf("error encoding message: %v", err)
-	}
-	return nil
 }
