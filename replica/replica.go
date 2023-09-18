@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sync/atomic"
+	"time"
 
 	"github.com/xm0onh/subspace_experiment/blockchain"
 	"github.com/xm0onh/subspace_experiment/election"
@@ -75,18 +76,26 @@ func (r *Replica) processNewView(view int) {
 	r.proposeBlock(view)
 }
 
-func (r *Replica) proposeBlock(view int) {
+func (r *Replica) proposeBlock(view int) *blockchain.Block {
 	// r.totalBlockSize += len(block.Payload)
-	// block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
+	block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
 	r.roundNo++
-	r.Broadcast([]string{"test"})
+	// r.Broadcast([]string{"test"})
+	return block
 }
 
 func (r *Replica) Start() {
 	go r.Run()
-	node_zero := identity.NewNodeID(1)
-	if r.ID() == node_zero {
-		r.proposeBlock(0)
+	// node_zero := identity.NewNodeID(1)
+	// if r.ID() == node_zero {
+	// 	r.proposeBlock(0)
+	// }
+	v := 0
+	for {
+		block := r.proposeBlock(v)
+		r.Inter.ProcessBlock(block)
+		time.Sleep(1 * time.Second)
+		v++
 	}
 
 }

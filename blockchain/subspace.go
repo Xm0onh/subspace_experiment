@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"github.com/xm0onh/subspace_experiment/election"
+	"github.com/xm0onh/subspace_experiment/log"
 	"github.com/xm0onh/subspace_experiment/operator"
 )
 
@@ -26,7 +27,10 @@ func (s *Subspace) ProcessBlock(block *Block) error {
 		return nil
 	}
 	s.bc.AddBlock(block)
-	_ = s.FindLeaderFor(s.bc.view + 1)
+	log.Debugf("New Block is Added. The Current View is %v", s.bc.view)
+	log.Debugf("Choosing new leader for view: %v", block.View+1)
+	newLeader := s.FindLeaderFor(s.bc.view + 1)
+	log.Debugf("New leader is %v", newLeader)
 	return nil
 }
 

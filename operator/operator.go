@@ -57,7 +57,6 @@ func (o *operator) Run() {
 }
 
 func (o *operator) recv() {
-	fmt.Println("Continous Recv for Operator", o.id)
 	for {
 		msg := o.Recv()
 		fmt.Println("I am ", o.id, "and got the message", msg)
