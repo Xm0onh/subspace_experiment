@@ -16,7 +16,6 @@ type Operator interface {
 	socket.Socket
 	ID() identity.NodeID
 	Run()
-	Recevie()
 	Register(m interface{}, f interface{})
 }
 type operator struct {
@@ -53,8 +52,16 @@ func (o *operator) Run() {
 	// 	go o.handle()
 
 	// }
-	// go o.recv()
+	go o.recv()
 	o.http()
+}
+
+func (o *operator) recv() {
+	fmt.Println("Continous Recv for Operator", o.id)
+	for {
+		msg := o.Recv()
+		fmt.Println("I am ", o.id, "and got the message", msg)
+	}
 }
 
 func (o *operator) Register(m interface{}, f interface{}) {
@@ -72,13 +79,6 @@ func (o *operator) Register(m interface{}, f interface{}) {
 		panic("register handle function error")
 	}
 	o.handles[t.String()] = fn
-}
-
-func (o *operator) Recevie() {
-	for {
-		msg := o.Recv()
-		fmt.Println("I am ", o.id, "and got the message", msg)
-	}
 }
 
 // handle receives messages from message channel and calls handle function using refection

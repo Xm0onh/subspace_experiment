@@ -39,7 +39,7 @@ func NewReplica(id identity.NodeID) *Replica {
 	r.eventChan = make(chan interface{})
 	r.committedBlocks = make(chan *blockchain.Block, 1000)
 	gob.Register(blockchain.Block{})
-
+	gob.Register([]string{})
 	r.Inter = blockchain.NewSubpace(r.Operator, r.Election, r.committedBlocks)
 	return r
 }
@@ -84,6 +84,9 @@ func (r *Replica) proposeBlock(view int) {
 
 func (r *Replica) Start() {
 	go r.Run()
-	go r.Broadcast([]string{"test"})
-	go r.Recevie()
+	node_zero := identity.NewNodeID(1)
+	if r.ID() == node_zero {
+		r.proposeBlock(0)
+	}
+
 }

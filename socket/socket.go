@@ -30,7 +30,7 @@ func NewSocket(id identity.NodeID, addrs map[identity.NodeID]string) Socket {
 	}
 
 	socket.nodes[id] = comm.NewComm(addrs[id])
-	// socket.nodes[id].Listen()
+	socket.nodes[id].Listen()
 
 	return socket
 }
@@ -51,7 +51,8 @@ func (s *socket) Send(to identity.NodeID, msg []string) {
 		s.nodes[to] = c
 		s.lock.Unlock()
 	}
-
+	// fmt.Println("address", address)
+	c.SendToTCP("127.0.0.1:8076", msg)
 	c.Send(msg)
 }
 
