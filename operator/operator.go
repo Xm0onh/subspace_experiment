@@ -44,11 +44,11 @@ func (o *operator) ID() identity.NodeID {
 }
 
 func (o *operator) Run() {
-	log.Infof("node %v start running", o.id)
-	if len(o.handles) > 0 {
-		go o.handle()
-		go o.recv()
-	}
+	// log.Infof("node %v start running", o.id)
+	// if len(o.handles) > 0 {
+	// 	go o.handle()
+	// 	go o.recv()
+	// }
 
 	o.http()
 }
