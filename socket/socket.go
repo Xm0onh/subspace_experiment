@@ -14,7 +14,6 @@ type Socket interface {
 	Send(to identity.NodeID, m interface{})
 	Broadcast(m interface{})
 	Recv() interface{}
-	Crash(t int)
 	Close()
 }
 type socket struct {
@@ -44,7 +43,7 @@ func (s *socket) Send(to identity.NodeID, m interface{}) {
 	s.lock.RLock()
 	c, exists := s.nodes[to]
 	s.lock.RUnlock()
-	if !exists {
+	if (!exists) || to == s.id {
 		s.lock.RLock()
 		address, ok := s.addresses[to]
 		s.lock.RUnlock()
@@ -61,7 +60,9 @@ func (s *socket) Send(to identity.NodeID, m interface{}) {
 		s.nodes[to] = c
 		s.lock.Unlock()
 	}
+
 	c.Send(s.id, m)
+
 }
 
 func (s *socket) Recv() interface{} {
@@ -70,18 +71,13 @@ func (s *socket) Recv() interface{} {
 	s.lock.RUnlock()
 	for {
 		m := c.Recv()
-		if !s.crash {
-			return m
-		}
+		return m
+
 	}
 }
 
 func (s *socket) Broadcast(m interface{}) {
 	for id := range s.addresses {
-		if id == s.id {
-			s.Recv()
-			continue
-		}
 		s.Send(id, m)
 	}
 }
@@ -89,16 +85,5 @@ func (s *socket) Broadcast(m interface{}) {
 func (s *socket) Close() {
 	for _, c := range s.nodes {
 		c.Close()
-	}
-}
-
-func (s *socket) Crash(t int) {
-	s.crash = true
-	if t > 0 {
-		timer := time.NewTimer(time.Duration(t) * time.Second)
-		go func() {
-			<-timer.C
-			s.crash = false
-		}()
 	}
 }

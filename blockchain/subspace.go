@@ -12,33 +12,31 @@ import (
 type Subspace struct {
 	operator.Operator
 	election.Election
-	committedBlocks chan *Block
-	bc              *Blockchain
+	longestTailBlock chan *Block
+	bc               *Blockchain
 }
 
 func NewSubpace(operator operator.Operator, elec election.Election, committedBlocks chan *Block) *Subspace {
 	s := new(Subspace)
 	s.Operator = operator
 	s.Election = elec
-	s.committedBlocks = committedBlocks
+	s.longestTailBlock = committedBlocks
 	s.bc = NewBlockchain()
 	return s
 }
 
 func (s *Subspace) ProcessBlock(proposer identity.NodeID, block *Block) error {
 	if s.bc.view > block.View {
-		fmt.Println("dang!")
 		return nil
 	}
-	_ = s.FindLeaderFor(s.bc.view)
-
-	if !s.Election.IsLeader(proposer, s.bc.view) {
+	if s.FindLeaderFor(s.bc.view) != s.ID() {
 		return nil
 	}
 	s.bc.AddBlock(block)
 	s.bc.view++
 	log.Debugf("New Block is Added. The Current View is %v", s.bc.view)
 	// log.Debugf("Choosing new leader for view: %v", block.View+1)
+	fmt.Println("Block Successfuly added")
 	return nil
 }
 

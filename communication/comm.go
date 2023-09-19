@@ -2,7 +2,6 @@ package comm
 
 import (
 	"encoding/gob"
-	"fmt"
 	"net"
 	"net/url"
 
@@ -16,6 +15,7 @@ type IComm interface {
 	Dial() error
 	Listen()
 	Close()
+	Itself(m interface{})
 }
 
 type communication struct {
@@ -49,9 +49,11 @@ func NewComm(addr string) IComm {
 
 func (c *communication) Send(from identity.NodeID, m interface{}) {
 	c.sendAndRecv <- m
-	// c.Dial()
 }
 
+func (c *communication) Itself(m interface{}) {
+	c.recv <- m
+}
 func (c *communication) Recv() (m interface{}) {
 	msg, ok := <-c.recv
 	if !ok {
@@ -65,15 +67,11 @@ func (c *communication) Close() {
 }
 
 func (c *communication) Dial() error {
-	fmt.Println("dialing ", c.uri.Host)
 	conn, err := net.Dial("tcp", c.uri.Host)
 	if err != nil {
 		return err
 	}
-
 	go func(conn net.Conn) {
-		// w := bufio.NewWriter(conn)
-		// codec := NewCodec(config.Codec, conn)
 		encoder := gob.NewEncoder(conn)
 		defer conn.Close()
 		for m := range c.sendAndRecv {

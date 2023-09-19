@@ -1,7 +1,6 @@
 package operator
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 
@@ -22,7 +21,6 @@ type operator struct {
 	socket.Socket
 	id          identity.NodeID
 	MessageChan chan interface{}
-	TxChan      chan interface{}
 	txRange     int
 	handles     map[string]reflect.Value
 	mem         *mempool.Producer
@@ -35,7 +33,6 @@ func NewOperator(id identity.NodeID) Operator {
 		id:          id,
 		Socket:      socket.NewSocket(id, config.Configuration.Addrs),
 		MessageChan: make(chan interface{}, 10240),
-		TxChan:      make(chan interface{}, 10240),
 		txRange:     500,
 		handles:     make(map[string]reflect.Value),
 		mem:         mempool.NewProducer(),
@@ -60,8 +57,6 @@ func (o *operator) recv() {
 	for {
 		msg := o.Recv()
 		o.MessageChan <- msg
-		// fmt.Println("I am ", o.id, "and got the message", msg)
-
 	}
 }
 
@@ -88,7 +83,6 @@ func (o *operator) handle() {
 		msg := <-o.MessageChan
 		v := reflect.ValueOf(msg)
 		name := v.Type().String()
-		fmt.Println(name)
 		f, exists := o.handles[name]
 		if !exists {
 			log.Fatalf("no registered handle function for message type %v", name)
