@@ -51,8 +51,8 @@ func (r *Rotation) FindLeaderFor(view int) identity.NodeID {
 	// 	nextID = uint64(r.peerNo)
 	// }
 	// return identity.NewNodeID(int(nextID))
-	if view == 0 {
-		return identity.NewNodeID(1)
+	if view <= 3 {
+		return identity.NewNodeID(r.peerNo)
 	}
 	h := sha1.New()
 	h.Write([]byte(strconv.Itoa(int(view + 1))))

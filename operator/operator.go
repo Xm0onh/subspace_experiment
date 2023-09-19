@@ -61,6 +61,7 @@ func (o *operator) recv() {
 		msg := o.Recv()
 		o.MessageChan <- msg
 		// fmt.Println("I am ", o.id, "and got the message", msg)
+
 	}
 }
 

@@ -27,14 +27,16 @@ func NewSubpace(operator operator.Operator, elec election.Election, committedBlo
 
 func (s *Subspace) ProcessBlock(proposer identity.NodeID, block *Block) error {
 	if s.bc.view > block.View {
+		fmt.Println("dang!")
 		return nil
 	}
-	lead := s.FindLeaderFor(s.bc.view)
-	fmt.Println("s.bc.view", s.bc.view, "leader is", lead)
-	if (s.Election.IsLeader(proposer, s.bc.view)) && (s.bc.view != 0) {
+	_ = s.FindLeaderFor(s.bc.view)
+
+	if !s.Election.IsLeader(proposer, s.bc.view) {
 		return nil
 	}
 	s.bc.AddBlock(block)
+	s.bc.view++
 	log.Debugf("New Block is Added. The Current View is %v", s.bc.view)
 	// log.Debugf("Choosing new leader for view: %v", block.View+1)
 	return nil

@@ -3,7 +3,6 @@ package comm
 import (
 	"encoding/gob"
 	"fmt"
-	"io"
 	"net"
 	"net/url"
 
@@ -71,14 +70,16 @@ func (c *communication) Dial() error {
 	if err != nil {
 		return err
 	}
+
 	go func(conn net.Conn) {
-		encode := gob.NewEncoder(conn)
+		// w := bufio.NewWriter(conn)
+		// codec := NewCodec(config.Codec, conn)
+		encoder := gob.NewEncoder(conn)
 		defer conn.Close()
 		for m := range c.sendAndRecv {
-			err := encode.Encode(&m)
+			err := encoder.Encode(&m)
 			if err != nil {
-				fmt.Println("error encoding message: ", err)
-				continue
+				log.Error(err)
 			}
 		}
 	}(conn)
@@ -89,11 +90,11 @@ func (c *communication) Dial() error {
 /// TCP Listener
 
 func (t *tcp) Listen() {
-	log.Debug("listening on ", t.uri.Port())
+	log.Debug("start listening ", t.uri.Port())
 
 	listener, err := net.Listen("tcp", ":"+t.uri.Port())
 	if err != nil {
-		log.Fatal("TCP error listening: ", err)
+		log.Fatal("TCP Listener error: ", err)
 	}
 
 	go func(listener net.Listener) {
@@ -101,24 +102,28 @@ func (t *tcp) Listen() {
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				log.Error("TCP error accepting: ", err) // Changed from Fatal to Error so the server doesn't crash
+				log.Error("TCP Accept error: ", err)
 				continue
 			}
+
 			go func(conn net.Conn) {
-				defer conn.Close()
+				// codec := NewCodec(config.Codec, conn)
 				decoder := gob.NewDecoder(conn)
+				defer conn.Close()
+				//r := bufio.NewReader(conn)
 				for {
-					var m interface{}
-					err := decoder.Decode(&m)
-					if err != nil {
-						if err == io.EOF {
-							log.Debug("Connection closed by client")
-							return
-						}
-						log.Error("Error decoding message: ", err)
+					select {
+					case <-t.close:
 						return
+					default:
+						var m interface{}
+						err := decoder.Decode(&m)
+						if err != nil {
+							log.Error(err)
+							continue
+						}
+						t.recv <- m
 					}
-					t.recv <- m
 				}
 			}(conn)
 

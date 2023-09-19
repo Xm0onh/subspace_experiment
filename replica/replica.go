@@ -2,7 +2,7 @@ package replica
 
 import (
 	"encoding/gob"
-	"sync"
+	"fmt"
 	"sync/atomic"
 
 	"github.com/xm0onh/subspace_experiment/blockchain"
@@ -55,10 +55,8 @@ func (r *Replica) startSignal() {
 }
 
 func (r *Replica) HandleBlock(block blockchain.Block) {
-
 	r.startSignal()
 	log.Debugf("[%v] received a block from %v, view is %v, id: %x, prevID: %x", r.ID(), block.Proposer, block.View, block.ID, block.PrevID)
-	r.roundNo = block.View
 	r.eventChan <- block
 }
 func (r *Replica) ListenLocalEvent() {
@@ -69,15 +67,16 @@ func (r *Replica) ListenCommittedBlocks() {
 
 }
 
-func (r *Replica) processNewView(view int) {
-	log.Debugf("[%v] is processing new view: %v, leader is %v", r.ID(), view, r.FindLeaderFor(view))
-	if !r.IsLeader(r.ID(), view) {
+func (r *Replica) processNewView(newView int) {
+
+	log.Debugf("[%v] is processing new view: %v, leader is %v", r.ID(), newView, r.FindLeaderFor(newView))
+	fmt.Println("the round is", newView, "The processor is", r.ID(), "the leader is", r.FindLeaderFor(newView), "the status is", r.IsLeader(r.ID(), newView))
+
+	if !r.IsLeader(r.ID(), newView) {
 		// fmt.Println("I am node,", r.ID(), "and I am not the leader for round", view)
 		return
 	}
-	// fmt.Println("BUT I am", r.ID(), "the leader for round", view)
-	r.proposeBlock(view)
-
+	r.proposeBlock(newView)
 }
 
 func (r *Replica) proposeBlock(view int) {
@@ -89,21 +88,17 @@ func (r *Replica) proposeBlock(view int) {
 
 func (r *Replica) Start() {
 	go r.Run()
-	// time.Sleep(1 * time.Second)
-	// l := r.Inter.GetLeaderForFirstRound(1)
-	r.proposeBlock(0)
+
+	r.processNewView(0)
 
 	<-r.start
 	for r.isStarted.Load() {
-		var wg sync.WaitGroup
-		wg.Add(1)
 		event := <-r.eventChan
 		switch v := event.(type) {
 		case blockchain.Block:
 			r.Inter.ProcessBlock(r.ID(), &v)
 			r.roundNo++
 			r.processNewView(r.roundNo)
-
 		}
 	}
 
