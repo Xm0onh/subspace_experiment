@@ -2,6 +2,7 @@ package replica
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
 
 	"github.com/xm0onh/subspace_experiment/blockchain"
@@ -38,7 +39,17 @@ func NewReplica(id identity.NodeID) *Replica {
 	return r
 }
 
+func StringToBlock(data string) *blockchain.Block {
+	var block blockchain.Block
+	err := json.Unmarshal([]byte(data), &block)
+	if err != nil {
+		return nil
+	}
+	return &block
+}
+
 func (r *Replica) HandleBlock(block blockchain.Block) {
+
 	if r.IsLeader(r.ID(), r.roundNo) {
 		fmt.Println("Diiibs")
 		_ = r.Inter.ProcessBlock(r.ID(), &block)
@@ -47,26 +58,45 @@ func (r *Replica) HandleBlock(block blockchain.Block) {
 	// 	r.roundNo++
 	// }
 	log.Debugf("[%v] received a block from %v, view is %v, id: %x, prevID: %x", r.ID(), block.Proposer, block.View, block.ID, block.PrevID)
-	// r.roundNo++
-	r.eventChan <- block
+	r.roundNo++
+
+}
+
+func (r *Replica) NewComingBlock() {
+	for {
+		if r.Operator.RecvT() != "" {
+			fmt.Println("there you go", r.Operator.RecvT())
+			// StringTOBlock
+			block := StringToBlock(r.Operator.RecvT())
+			r.HandleBlock(*block)
+			r.Operator.SetT()
+			// msg := blockchain.Block.FromString(o.test)
+			// v := reflect.ValueOf(msg)
+			// name := v.Type().String()
+			// f, exists := o.handles[name]
+			// if !exists {
+			// 	log.Fatalf("no registered handle function for message type %v", name)
+			// }
+
+			// f.Call([]reflect.Value{v})
+		}
+	}
 
 }
 
 func (r *Replica) proposeBlock(view int) {
 
 	// log.Debugf("[%v] is processing new view: %v, leader is %v", r.ID(), view, r.FindLeaderFor(view))
-	_ = blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
-	r.Broadcast("test")
+	block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
+	r.Broadcast(block.ToString())
 	// time.Sleep(300 * time.Millisecond)
 }
 
 func (r *Replica) Start() {
 	go r.Run()
+	// r.NewComingBlock()
+	r.proposeBlock(0)
 
-	for {
-		r.proposeBlock(r.roundNo)
-		// time.Sleep(500 * time.Millisecond)
-	}
 	// if r.IsLeader(r.ID(), r.roundNo) && r.roundNo == 0 {
 	// 	r.proposeBlock(r.roundNo)
 	// 	fmt.Println("Hello")

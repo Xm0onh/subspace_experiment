@@ -1,8 +1,11 @@
 package operator
 
 import (
-	"net/http"
+	"fmt"
+	"net"
 	"reflect"
+
+	"github.com/anthdm/hollywood/actor"
 
 	"github.com/xm0onh/subspace_experiment/config"
 	"github.com/xm0onh/subspace_experiment/identity"
@@ -16,6 +19,8 @@ type Operator interface {
 	ID() identity.NodeID
 	Run()
 	Register(m interface{}, f interface{})
+	RecvT() string
+	SetT()
 }
 type operator struct {
 	socket.Socket
@@ -24,7 +29,7 @@ type operator struct {
 	txRange     int
 	handles     map[string]reflect.Value
 	mem         *mempool.Producer
-	server      *http.Server
+	test        string
 }
 
 func NewOperator(id identity.NodeID) Operator {
@@ -39,25 +44,42 @@ func NewOperator(id identity.NodeID) Operator {
 	}
 }
 
+func (o *operator) newServer(listenAddr string) actor.Producer {
+	return func() actor.Receiver {
+		return &server{
+			listenAddr: listenAddr,
+			sessions:   make(map[*actor.PID]net.Conn),
+			operator:   o,
+		}
+	}
+}
+
+func (o *operator) newSession(conn net.Conn) actor.Producer {
+	return func() actor.Receiver {
+		return &session{
+			conn:     conn,
+			msg:      make(chan []byte, 1024),
+			operator: o,
+		}
+	}
+}
+
+func (o *operator) newHandler() actor.Receiver {
+	return &handler{}
+}
+
 func (o *operator) ID() identity.NodeID {
 	return o.id
 }
 
 func (o *operator) Run() {
-	// log.Infof("node %v start running", o.id)
-	// if len(o.handles) > 0 {
-	// 	go o.handle()
-	// 	go o.recv()
-	// }
+	log.Infof("node %v start running", o.id)
+	if len(o.handles) > 0 {
+		go o.handle()
+		// go o.recv()
+	}
 
 	o.http()
-}
-
-func (o *operator) recv() {
-	for {
-		msg := o.Recv()
-		o.MessageChan <- msg
-	}
 }
 
 func (o *operator) Register(m interface{}, f interface{}) {
@@ -80,14 +102,26 @@ func (o *operator) Register(m interface{}, f interface{}) {
 // handle receives messages from message channel and calls handle function using refection
 func (o *operator) handle() {
 	for {
-		msg := <-o.MessageChan
-		v := reflect.ValueOf(msg)
-		name := v.Type().String()
-		f, exists := o.handles[name]
-		if !exists {
-			log.Fatalf("no registered handle function for message type %v", name)
-		}
+		if o.test != "" {
+			fmt.Println("there you go", o.test)
+			o.test = ""
+			// msg := blockchain.Block.FromString(o.test)
+			// v := reflect.ValueOf(msg)
+			// name := v.Type().String()
+			// f, exists := o.handles[name]
+			// if !exists {
+			// 	log.Fatalf("no registered handle function for message type %v", name)
+			// }
 
-		f.Call([]reflect.Value{v})
+			// f.Call([]reflect.Value{v})
+		}
 	}
+}
+
+func (o *operator) RecvT() string {
+	return o.test
+}
+
+func (o *operator) SetT() {
+	o.test = ""
 }

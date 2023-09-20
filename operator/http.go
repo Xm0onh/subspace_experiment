@@ -17,16 +17,14 @@ import (
 	sLog "github.com/xm0onh/subspace_experiment/log"
 )
 
-type handler struct{}
-
-func newHandler() actor.Receiver {
-	return &handler{}
+type handler struct {
 }
 
 func (handler) Receive(c *actor.Context) {
 	switch msg := c.Message().(type) {
 	case []byte:
 		fmt.Println("got message to handle:", string(msg))
+
 	case actor.Stopped:
 		for i := 0; i < 3; i++ {
 			fmt.Printf("\r handler stopping in %d", 3-i)
@@ -37,15 +35,25 @@ func (handler) Receive(c *actor.Context) {
 }
 
 type session struct {
+	conn     net.Conn
+	msg      chan []byte
+	operator *operator
+}
+
+type connAdd struct {
+	pid  *actor.PID
 	conn net.Conn
 }
 
-func newSession(conn net.Conn) actor.Producer {
-	return func() actor.Receiver {
-		return &session{
-			conn: conn,
-		}
-	}
+type connRem struct {
+	pid *actor.PID
+}
+
+type server struct {
+	listenAddr string
+	ln         net.Listener
+	sessions   map[*actor.PID]net.Conn
+	operator   *operator
 }
 
 func (s *session) Receive(c *actor.Context) {
@@ -69,37 +77,16 @@ func (s *session) readLoop(c *actor.Context) {
 		}
 		// copy shared buffer, to prevent race conditions.
 		msg := make([]byte, n)
-		copy(msg, buf[:n])
 
+		copy(msg, buf[:n])
+		s.operator.test = string(msg)
+		// fmt.Println(<-s.operator.test)
+		// fmt.Println("-------->", msg)
 		// Send to the handler to process to message
-		c.Send(c.Parent().Child("handler"), msg)
+		// c.Send(c.Parent().Child("handler"), msg)
 	}
 	// Loop is done due to error or we need to close due to server shutdown.
 	c.Send(c.Parent(), &connRem{pid: c.PID()})
-}
-
-type connAdd struct {
-	pid  *actor.PID
-	conn net.Conn
-}
-
-type connRem struct {
-	pid *actor.PID
-}
-
-type server struct {
-	listenAddr string
-	ln         net.Listener
-	sessions   map[*actor.PID]net.Conn
-}
-
-func newServer(listenAddr string) actor.Producer {
-	return func() actor.Receiver {
-		return &server{
-			listenAddr: listenAddr,
-			sessions:   make(map[*actor.PID]net.Conn),
-		}
-	}
 }
 
 func (s *server) Receive(c *actor.Context) {
@@ -111,7 +98,7 @@ func (s *server) Receive(c *actor.Context) {
 		}
 		s.ln = ln
 		// start the handler that will handle the incomming messages from clients/sessions.
-		c.SpawnChild(newHandler, "handler")
+		c.SpawnChild(s.operator.newHandler, "handler")
 	case actor.Started:
 		log.Infow("server started", log.M{"addr": s.listenAddr})
 		go s.acceptLoop(c)
@@ -127,6 +114,7 @@ func (s *server) Receive(c *actor.Context) {
 	}
 }
 
+// done
 func (s *server) acceptLoop(c *actor.Context) {
 	for {
 		conn, err := s.ln.Accept()
@@ -134,7 +122,7 @@ func (s *server) acceptLoop(c *actor.Context) {
 			log.Errorw("accept error", log.M{"err": err})
 			break
 		}
-		pid := c.SpawnChild(newSession(conn), "session", actor.WithTags(conn.RemoteAddr().String()))
+		pid := c.SpawnChild(s.operator.newSession(conn), "session", actor.WithTags(conn.RemoteAddr().String()))
 		c.Send(c.PID(), &connAdd{
 			pid:  pid,
 			conn: conn,
@@ -152,7 +140,7 @@ func (o *operator) http() {
 	listenAddr := flag.String("listenaddr"+fmt.Sprint(o.id), port, "listen address of the TCP server")
 	sLog.Info("Node ", o.id, " http server starting on ", port)
 	e := actor.NewEngine()
-	serverPID := e.Spawn(newServer(*listenAddr), "server")
+	serverPID := e.Spawn(o.newServer(*listenAddr), "server")
 
 	sigch := make(chan os.Signal, 1)
 	signal.Notify(sigch, syscall.SIGINT, syscall.SIGTERM)

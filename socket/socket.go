@@ -2,14 +2,11 @@ package socket
 
 import (
 	"net/url"
-	"sync"
 
 	comm "github.com/xm0onh/subspace_experiment/communication"
 	"github.com/xm0onh/subspace_experiment/config"
 	"github.com/xm0onh/subspace_experiment/identity"
 	"github.com/xm0onh/subspace_experiment/log"
-
-	"fmt"
 
 	"github.com/anthdm/hollywood/actor"
 	"github.com/anthdm/hollywood/examples/remote/msg"
@@ -21,7 +18,6 @@ type Socket interface {
 	Send(to identity.NodeID, msg string)
 	// Broadcast(m interface{})
 	Broadcast(msg string)
-	Recv() interface{}
 	Close()
 	connect(port string)
 }
@@ -30,7 +26,6 @@ type socket struct {
 	addresses map[identity.NodeID]string
 	crash     bool
 	nodes     map[identity.NodeID]comm.IComm
-	lock      sync.RWMutex
 	cPort     string
 	// sPort     string
 	e *actor.Engine
@@ -60,7 +55,7 @@ func NewSocket(id identity.NodeID, addrs map[identity.NodeID]string) Socket {
 }
 
 func (s *socket) connect(port string) {
-	fmt.Println("127.0.0.1" + port)
+	log.Debug("start listening ", "127.0.0.1"+port)
 	// fmt.Println("127.0.0.1" + sPort)
 	e := actor.NewEngine()
 	r := remote.New(e, remote.Config{ListenAddr: "127.0.0.1" + (port)})
@@ -112,17 +107,6 @@ func (s *socket) Send(to identity.NodeID, m string) {
 // 	c.Send(s.id, m)
 
 // }
-
-func (s *socket) Recv() interface{} {
-	s.lock.RLock()
-	c := s.nodes[s.id]
-	s.lock.RUnlock()
-	for {
-		m := c.Recv()
-		return m
-
-	}
-}
 
 func (s *socket) Broadcast(msg string) {
 	for id := range s.addresses {

@@ -1,6 +1,8 @@
 package blockchain
 
 import (
+	"encoding/json"
+
 	"github.com/xm0onh/subspace_experiment/identity"
 	"github.com/xm0onh/subspace_experiment/mempool"
 )
@@ -12,6 +14,14 @@ type Block struct {
 	ID      int
 	PrevID  int
 	Payload []mempool.Transaction
+}
+
+func (b *Block) ToString() string {
+	data, err := json.Marshal(b)
+	if err != nil {
+		return ""
+	}
+	return string(data)
 }
 
 func NewBlock(proposer identity.NodeID, view, id, prevID int, payload []mempool.Transaction) *Block {
