@@ -115,8 +115,8 @@ func (r *Replica) txAdjustment() {
 		actual_bundles += r.mem.GetBundleCount()
 		if (r.roundNo%5 == 0) && (r.roundNo != 0) {
 			r.mem.TxRangeAdjustment(actual_bundles, expected_bundle)
-			log.Debugf("TX Range Adjusted is Executed for node [%v]", r.ID())
-			time.Sleep(2 * time.Second)
+			log.Debugf("TX Range Adjustement is Executed for node [%v]", r.ID())
+			time.Sleep(3 * time.Second)
 			r.start.Store(false)
 			r.roundNo++
 			break
