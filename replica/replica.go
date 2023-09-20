@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/xm0onh/subspace_experiment/blockchain"
@@ -20,6 +21,7 @@ type Replica struct {
 	operator.Operator
 	election.Election
 	mem             *mempool.Producer
+	start           atomic.Bool
 	committedBlocks chan *blockchain.Block
 	eventChan       chan interface{}
 	roundNo         int
@@ -32,6 +34,7 @@ func NewReplica(id identity.NodeID) *Replica {
 	r.Election = election.NewRotation(config.GetConfig().N())
 	r.mem = mempool.NewProducer()
 	r.roundNo = 0
+	r.start.Store(false)
 	r.eventChan = make(chan interface{})
 	r.committedBlocks = make(chan *blockchain.Block, 1000)
 	r.Register(blockchain.Block{}, r.HandleBlock)
@@ -40,6 +43,10 @@ func NewReplica(id identity.NodeID) *Replica {
 	r.Inter = blockchain.NewSubpace(r.Operator, r.Election, r.committedBlocks)
 	return r
 }
+
+var actual_bundles = 0
+var counter = 0
+var expected_bundle = 0
 
 func ExtractJSON(data string) (string, error) {
 	startIndex := strings.Index(data, "{\"Proposer\"")
@@ -103,6 +110,20 @@ func (r *Replica) NewComingBlock() {
 
 }
 
+func (r *Replica) txAdjustment() {
+	for r.start.Load() {
+		actual_bundles += r.mem.GetBundleCount()
+		if (r.roundNo%5 == 0) && (r.roundNo != 0) {
+			r.mem.TxRangeAdjustment(actual_bundles, expected_bundle)
+			log.Debugf("TX Range Adjusted is Executed for node [%v]", r.ID())
+			time.Sleep(2 * time.Second)
+			r.start.Store(false)
+			r.roundNo++
+			break
+		}
+	}
+}
+
 func (r *Replica) proposeBlock(view int) {
 
 	if r.IsLeader(r.ID(), r.roundNo) {
@@ -119,10 +140,17 @@ func (r *Replica) proposeBlock(view int) {
 func (r *Replica) Start() {
 	go r.Run()
 	go r.NewComingBlock()
-	for i := 0; i < 100; i++ {
+
+	for {
+		if (r.roundNo%5 == 0) && (r.roundNo != 0) {
+			r.start.Store(true)
+			go r.txAdjustment()
+			time.Sleep(2 * time.Second)
+		}
 		fmt.Println("I am node", r.ID(), "and I received a block in round", r.roundNo-1)
 		r.proposeBlock(r.roundNo)
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(2000 * time.Millisecond)
+
 	}
 
 	// if r.IsLeader(r.ID(), r.roundNo) && r.roundNo == 0 {
