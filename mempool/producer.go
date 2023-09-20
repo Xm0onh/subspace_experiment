@@ -11,5 +11,5 @@ func NewProducer() *Producer {
 }
 
 func (p *Producer) GetTransactions() []Transaction {
-	return p.mempool.GetTx()
+	return p.mempool.SelectTransactionsForBundle()
 }

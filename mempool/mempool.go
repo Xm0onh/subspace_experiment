@@ -7,10 +7,10 @@ import (
 
 type Mempool struct {
 	txns             []Transaction
-	uMax             uint64
+	uMax             int
 	expected_bundle  int
 	actual_bundle    int
-	current_tx_range uint64
+	current_tx_range int
 }
 
 type Transaction struct {
@@ -63,26 +63,62 @@ func NewMemPool() *Mempool {
 	return &Mempool{
 		txns:             transactionGenerator(int(MAX / 3)),
 		uMax:             MAX,
-		current_tx_range: MAX,
+		current_tx_range: MAX / 2,
+		expected_bundle:  10,
+		actual_bundle:    0,
 	}
 }
 
-func (m *Mempool) BidirectionalDistance(hash1, hash2 string) int {
+func (m *Mempool) BidirectionalDistance(num1, num2 float64) int {
 	// TODO:
-	return 0
+	return int(math.Abs(num1 - num2))
 }
 
-func (m *Mempool) SelectTransactionsForBundle(vrfSignature string) []Transaction {
-	// slot_vrf_hash := hash(vrfSignature)  // TODO: implement a hash function
+func (m *Mempool) ProduceBundle() {
+	m.actual_bundle += 1
+}
+
+// func (m *Mempool) SelectTransactionsForBundle(vrfSignature string) []Transaction {
+// 	// slot_vrf_hash := hash(vrfSignature)  // TODO: implement a hash function
+
+// 	// for _, tx := range m.txns {
+// 	// 	distance := m.BidirectionalDistance("0", tx.Hash)
+// 	// 	if distance <= m.current_tx_range/2 {
+// 	// 		selectedTxs = append(selectedTxs, tx)
+// 	// 	}
+// 	// }
+// 	slotNum := float64(rand.Intn(m.uMax))
+// 	selectedTxs := []Transaction{}
+
+// 	for _, tx := range m.txns {
+// 		if m.BidirectionalDistance(slotNum, float64(tx.Seq)) <= m.current_tx_range/2 {
+// 			selectedTxs = append(selectedTxs, tx)
+// 		}
+// 	}
+// 	m.ProduceBundle()
+// 	return selectedTxs
+// }
+
+func (m *Mempool) SelectTransactionsForBundle() []Transaction {
+	slotNum := float64(rand.Intn(m.uMax))
 	selectedTxs := []Transaction{}
+	selectedIndices := []int{}
 
-	// for _, tx := range m.txns {
-	// 	distance := m.BidirectionalDistance("0", tx.Hash)
-	// 	if distance <= m.current_tx_range/2 {
-	// 		selectedTxs = append(selectedTxs, tx)
-	// 	}
-	// }
+	// Select transactions and record their indices
+	for index, tx := range m.txns {
+		if m.BidirectionalDistance(slotNum, float64(tx.Seq)) <= m.current_tx_range/2 {
+			selectedTxs = append(selectedTxs, tx)
+			selectedIndices = append(selectedIndices, index)
+		}
+	}
 
+	// Remove selected transactions from the mempool
+	for i := len(selectedIndices) - 1; i >= 0; i-- {
+		index := selectedIndices[i]
+		m.txns = append(m.txns[:index], m.txns[index+1:]...)
+	}
+
+	m.ProduceBundle()
 	return selectedTxs
 }
 
@@ -90,8 +126,8 @@ func (m *Mempool) GetTx() []Transaction {
 	return m.txns[0:2]
 }
 
-func (m *Mempool) TxRangeAdjustment() {
+func (m *Mempool) TxRangeAdjustment(expected_bundle, actual_bundle int) {
 	newRange := math.Max(
-		math.Min(float64(m.expected_bundle)/float64(m.actual_bundle), 4), 0.25) * float64(m.current_tx_range)
-	m.current_tx_range = uint64(newRange)
+		math.Min(float64(expected_bundle)/float64(actual_bundle), 4), 0.25) * float64(m.current_tx_range)
+	m.current_tx_range = int(newRange)
 }
