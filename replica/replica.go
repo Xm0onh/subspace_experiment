@@ -86,7 +86,7 @@ func (r *Replica) NewComingBlock() {
 			if err == nil {
 				r.HandleBlock(*block)
 				r.Operator.SetT()
-				r.roundNo++
+				r.roundNo = block.View + 1
 				// fmt.Println("round, ", r.roundNo)
 			}
 			// msg := blockchain.Block.FromString(o.test)
@@ -106,6 +106,7 @@ func (r *Replica) NewComingBlock() {
 func (r *Replica) proposeBlock(view int) {
 
 	if r.IsLeader(r.ID(), r.roundNo) {
+		fmt.Println(r.IsLeader(r.ID(), r.roundNo))
 		block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
 		// fmt.Println("next leader is:" + r.FindLeaderFor(r.roundNo+1))
 		_ = r.Inter.ProcessBlock(r.ID(), block)

@@ -33,8 +33,8 @@ func (s *Subspace) ProcessBlock(proposer identity.NodeID, block *Block) error {
 	// 	return nil
 	// }
 	s.bc.AddBlock(block)
-	s.bc.view++
 	log.Debugf("New Block is Added. The Current View is %v", s.bc.view)
+	s.bc.view++
 	// log.Debugf("Choosing new leader for view: %v", block.View+1)
 	fmt.Println("Block Successfuly added")
 	return nil
