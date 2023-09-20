@@ -1,11 +1,17 @@
 package mempool
 
 import (
+	"math"
+	"math/big"
 	"math/rand"
 )
 
 type Mempool struct {
-	txns []Transaction
+	txns             []Transaction
+	uMax             *big.Int
+	expected_bundle  int
+	actual_bundle    int
+	current_tx_range int
 }
 
 type Transaction struct {
@@ -52,9 +58,16 @@ func transactionGenerator(numberOfTransactions int) []Transaction {
 func NewMemPool() *Mempool {
 	return &Mempool{
 		txns: transactionGenerator(500),
+		uMax: new(big.Int).Exp(big.NewInt(2), big.NewInt(64), nil),
 	}
 }
 
 func (m *Mempool) GetTx() []Transaction {
 	return m.txns[0:2]
+}
+
+func (m *Mempool) TxRangeAdjustment() {
+	newRange := math.Max(
+		math.Min(float64(m.expected_bundle)/float64(m.actual_bundle), 4), 0.25) * float64(m.current_tx_range)
+	m.current_tx_range = int(newRange)
 }
