@@ -4,6 +4,8 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/xm0onh/subspace_experiment/blockchain"
 	"github.com/xm0onh/subspace_experiment/config"
@@ -39,37 +41,54 @@ func NewReplica(id identity.NodeID) *Replica {
 	return r
 }
 
-func StringToBlock(data string) *blockchain.Block {
-	var block blockchain.Block
-	err := json.Unmarshal([]byte(data), &block)
-	if err != nil {
-		return nil
+func ExtractJSON(data string) (string, error) {
+	startIndex := strings.Index(data, "{\"Proposer\"")
+	if startIndex == -1 {
+		return "", fmt.Errorf("JSON content not found")
 	}
-	return &block
+
+	return data[startIndex:], nil
+}
+
+func StringToBlock(data string) (*blockchain.Block, error) {
+	extractedJSON, err := ExtractJSON(data)
+	if err != nil {
+		return nil, err
+	}
+
+	var block blockchain.Block
+	err = json.Unmarshal([]byte(extractedJSON), &block)
+	if err != nil {
+		return nil, err
+	}
+	return &block, nil
 }
 
 func (r *Replica) HandleBlock(block blockchain.Block) {
 
-	if r.IsLeader(r.ID(), r.roundNo) {
-		fmt.Println("Diiibs")
-		_ = r.Inter.ProcessBlock(r.ID(), &block)
-	}
 	// if !r.IsLeader(r.ID(), r.roundNo) {
 	// 	r.roundNo++
 	// }
 	log.Debugf("[%v] received a block from %v, view is %v, id: %x, prevID: %x", r.ID(), block.Proposer, block.View, block.ID, block.PrevID)
-	r.roundNo++
+	_ = r.Inter.ProcessBlock(r.ID(), &block)
 
 }
 
 func (r *Replica) NewComingBlock() {
 	for {
+
 		if r.Operator.RecvT() != "" {
-			fmt.Println("there you go", r.Operator.RecvT())
+
 			// StringTOBlock
-			block := StringToBlock(r.Operator.RecvT())
-			r.HandleBlock(*block)
-			r.Operator.SetT()
+
+			block, err := StringToBlock(r.Operator.RecvT())
+			// time.Sleep(1 * time.Second)
+			if err == nil {
+				r.HandleBlock(*block)
+				r.Operator.SetT()
+				r.roundNo++
+				// fmt.Println("round, ", r.roundNo)
+			}
 			// msg := blockchain.Block.FromString(o.test)
 			// v := reflect.ValueOf(msg)
 			// name := v.Type().String()
@@ -86,16 +105,24 @@ func (r *Replica) NewComingBlock() {
 
 func (r *Replica) proposeBlock(view int) {
 
-	// log.Debugf("[%v] is processing new view: %v, leader is %v", r.ID(), view, r.FindLeaderFor(view))
-	block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
-	r.Broadcast(block.ToString())
-	// time.Sleep(300 * time.Millisecond)
+	if r.IsLeader(r.ID(), r.roundNo) {
+		block := blockchain.NewBlock(r.ID(), view, r.roundNo, r.roundNo-1, r.mem.GetTransactions())
+		// fmt.Println("next leader is:" + r.FindLeaderFor(r.roundNo+1))
+		_ = r.Inter.ProcessBlock(r.ID(), block)
+		r.Broadcast(block.ToString())
+		r.roundNo++
+	}
+
 }
 
 func (r *Replica) Start() {
 	go r.Run()
-	// r.NewComingBlock()
-	r.proposeBlock(0)
+	go r.NewComingBlock()
+	for i := 0; i < 100; i++ {
+		fmt.Println("I am node", r.ID(), "and I received a block in round", r.roundNo-1)
+		r.proposeBlock(r.roundNo)
+		time.Sleep(1000 * time.Millisecond)
+	}
 
 	// if r.IsLeader(r.ID(), r.roundNo) && r.roundNo == 0 {
 	// 	r.proposeBlock(r.roundNo)

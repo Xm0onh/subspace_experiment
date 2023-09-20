@@ -29,9 +29,9 @@ func (s *Subspace) ProcessBlock(proposer identity.NodeID, block *Block) error {
 	if s.bc.view > block.View {
 		return nil
 	}
-	if s.FindLeaderFor(s.bc.view) != s.ID() {
-		return nil
-	}
+	// if s.FindLeaderFor(s.bc.view) != s.ID() {
+	// 	return nil
+	// }
 	s.bc.AddBlock(block)
 	s.bc.view++
 	log.Debugf("New Block is Added. The Current View is %v", s.bc.view)
