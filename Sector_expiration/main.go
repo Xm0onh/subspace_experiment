@@ -26,7 +26,8 @@ func hashValue(farmerID int, piecePosition int) uint32 {
 func main() {
 
 	// expOne()
-	expTwo()
+	// expTwo()
+	Scenario3()
 }
 
 // func expTwo() {
@@ -104,20 +105,22 @@ func expOne() {
 func expTwo() {
 	initialHeight := 1000
 	minGrowth := 100
-	multiplier := 4
+	multiplier := 2
+	farmersUp := 80 * farmerCount / 100
+	farmersDown := 20 * farmerCount / 100
 
 	// Create a slice to keep track of the pieces across all farmers
 	pieces := make([]int, totalPieces)
 
 	// Open file for writing. If file doesn't exist, create it, or append to the file
-	file, err := os.OpenFile("latestHeight10000.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile("latestHeight100000m2.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
 
 	// For each farmer, calculate the latest height before 1,000,000 at which they perform a piece selection
-	for i := 0; i < farmerCount; i++ {
+	for i := 0; i < farmersUp; i++ {
 		currentHeight := initialHeight
 		latestHeight := initialHeight
 		for currentHeight < totalPieces {
@@ -142,11 +145,50 @@ func expTwo() {
 		}
 	}
 
+	for i := 0; i < farmersDown; i++ {
+		piecesPerFarmerTemp := piecesPerFarmer
+		currentHeight := initialHeight
+		lowestHeight := totalPieces
+		for {
+			maxGrowth := multiplier * currentHeight
+			randomGrowth := rand.Intn(maxGrowth-minGrowth+1) + minGrowth
+			if lowestHeight-randomGrowth > 0 {
+				lowestHeight -= randomGrowth
+				currentHeight += randomGrowth
+			} else {
+				break
+			}
+		}
+		// fmt.Println("Lowest Height ->", lowestHeight)
+		_, err := file.WriteString("Farmer#" + strconv.Itoa(i) + "--" + strconv.Itoa(totalPieces) + "\n")
+		if err != nil {
+			panic(err)
+		}
+
+		for j := 0; j < piecesPerFarmerTemp; j++ {
+			selectedPiece := hashValue(i, j) % uint32(totalPieces)
+			if selectedPiece < uint32(lowestHeight) {
+				piecesPerFarmerTemp++
+				continue
+			}
+			pieces[selectedPiece]++
+		}
+	}
+
+	file2, err := os.OpenFile("Mitigate.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer file2.Close()
 	// Check for missing pieces
 	missingPieces := 0
-	for _, count := range pieces {
+	for index, count := range pieces {
 		if count == 0 {
 			missingPieces++
+			_, err := file2.WriteString("Slot#" + "--" + strconv.Itoa(index) + "\n")
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
