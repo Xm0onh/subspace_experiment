@@ -166,6 +166,7 @@ func Scenario3() {
 
 	// Calculate and display the missing piece information
 	fractionMissing := float64(missingPieces) / float64(totalPieces3)
+	fmt.Println("Scenario 3")
 	fmt.Printf("Number of Missing Pieces: %d\n", missingPieces)
 	fmt.Printf("Fraction of Missing Pieces: %.4f\n", fractionMissing)
 	for i := 0; i < len(checkPoints); i++ {

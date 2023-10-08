@@ -4,9 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"math"
 	"math/rand"
-	"os"
-	"strconv"
 )
 
 const (
@@ -26,8 +25,11 @@ func hashValue(farmerID int, piecePosition int) uint32 {
 func main() {
 
 	// expOne()
-	// expTwo()
-	Scenario2()
+	// Scenario2()
+	// Scenario1()
+	// Scenario3()
+	Scenario4()
+
 }
 
 // func expTwo() {
@@ -102,25 +104,16 @@ func expOne() {
 	fmt.Printf("Fraction of Missing Pieces: %.4f\n", fractionMissing)
 }
 
-func expTwo() {
+func Scenario2() {
 	initialHeight := 1000
 	minGrowth := 100
 	multiplier := 2
-	farmersUp := 80 * farmerCount / 100
-	farmersDown := 20 * farmerCount / 100
-
+	farmers := make([]int, 2*farmerCount)
 	// Create a slice to keep track of the pieces across all farmers
-	pieces := make([]int, totalPieces)
-
-	// Open file for writing. If file doesn't exist, create it, or append to the file
-	file, err := os.OpenFile("latestHeight100000m2.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
+	pieces := make([]int, totalPieces*2)
 
 	// For each farmer, calculate the latest height before 1,000,000 at which they perform a piece selection
-	for i := 0; i < farmersUp; i++ {
+	for i := 0; i < farmerCount; i++ {
 		currentHeight := initialHeight
 		latestHeight := initialHeight
 		for currentHeight < totalPieces {
@@ -131,69 +124,50 @@ func expTwo() {
 				latestHeight = currentHeight
 			}
 		}
-
-		// Write the latestHeight for the current farmer to the file
-		_, err := file.WriteString("Farmer#" + strconv.Itoa(i) + "--" + strconv.Itoa(latestHeight) + "\n")
-		if err != nil {
-			panic(err)
-		}
-
-		// Farmer i has to select piecesPerFarmer pieces out of the first latestHeight pieces
+		farmers[i] = latestHeight
 		for j := 0; j < piecesPerFarmer; j++ {
-			selectedPiece := hashValue(i, j) % uint32(latestHeight)
+			selectedPiece := hashValue(i, j) % uint32(farmers[i])
 			pieces[selectedPiece]++
 		}
 	}
 
-	for i := 0; i < farmersDown; i++ {
-		piecesPerFarmerTemp := piecesPerFarmer
-		currentHeight := initialHeight
-		lowestHeight := totalPieces
-		for {
+	for i := farmerCount; i < 2*farmerCount; i++ {
+
+		currentHeight := rand.Intn(2000000) - 1000000
+		latestHeight := currentHeight
+		for currentHeight < totalPieces {
 			maxGrowth := multiplier * currentHeight
-			randomGrowth := rand.Intn(maxGrowth-minGrowth+1) + minGrowth
-			if lowestHeight-randomGrowth > 0 {
-				lowestHeight -= randomGrowth
-				currentHeight += randomGrowth
-			} else {
+			randomGrowth := rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+			currentHeight += randomGrowth
+			if currentHeight < totalPieces {
+				latestHeight = currentHeight
+			}
+		}
+		farmers[i] = latestHeight + 1000000
+		for j := 0; j < piecesPerFarmer; j++ {
+			for {
+				selectedPiece := hashValue(i, j) % uint32(farmers[i])
+
+				if selectedPiece > totalPieces*2 {
+					continue
+				}
+				pieces[selectedPiece]++
 				break
 			}
 		}
-		// fmt.Println("Lowest Height ->", lowestHeight)
-		_, err := file.WriteString("Farmer#" + strconv.Itoa(i) + "--" + strconv.Itoa(totalPieces) + "\n")
-		if err != nil {
-			panic(err)
-		}
-
-		for j := 0; j < piecesPerFarmerTemp; j++ {
-			selectedPiece := hashValue(i, j) % uint32(totalPieces)
-			if selectedPiece < uint32(lowestHeight) {
-				piecesPerFarmerTemp++
-				continue
-			}
-			pieces[selectedPiece]++
-		}
 	}
 
-	file2, err := os.OpenFile("Mitigate.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	defer file2.Close()
-	// Check for missing pieces
 	missingPieces := 0
-	for index, count := range pieces {
+	for _, count := range pieces {
 		if count == 0 {
 			missingPieces++
-			_, err := file2.WriteString("Slot#" + "--" + strconv.Itoa(index) + "\n")
-			if err != nil {
-				panic(err)
-			}
+
 		}
 	}
 
 	// Calculate and display the missing piece information
-	fractionMissing := float64(missingPieces) / float64(totalPieces)
+	fractionMissing := float64(missingPieces) / float64(2*totalPieces)
+	fmt.Println("Scenario 2")
 	fmt.Printf("Number of Missing Pieces: %d\n", missingPieces)
 	fmt.Printf("Fraction of Missing Pieces: %.4f\n", fractionMissing)
 }

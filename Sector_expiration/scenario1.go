@@ -11,7 +11,7 @@ const (
 	totalPieces2 = 2000000
 )
 
-func Scenario2() {
+func Scenario1() {
 	minGrowth := 100
 	multiplier := 2
 	pieces := make([]int, totalPieces2)
@@ -101,6 +101,7 @@ func Scenario2() {
 
 	// Calculate and display the missing piece information
 	fractionMissing := float64(missingPieces) / float64(totalPieces2)
+	fmt.Println("Scenario 1")
 	fmt.Printf("Number of Missing Pieces: %d\n", missingPieces)
 	fmt.Printf("Fraction of Missing Pieces: %.4f\n", fractionMissing)
 
