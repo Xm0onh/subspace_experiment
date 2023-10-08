@@ -27,7 +27,7 @@ func main() {
 
 	// expOne()
 	// expTwo()
-	Scenario3()
+	Scenario2()
 }
 
 // func expTwo() {
