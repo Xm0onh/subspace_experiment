@@ -12,7 +12,7 @@ const (
 
 func Scenario4() {
 	minGrowth := 100
-	multiplier := 2
+	multiplier := 0.1
 	pieces := make([]int, totalPieces4)
 	farmers := make([]int, 3*farmerCount)
 
@@ -20,8 +20,13 @@ func Scenario4() {
 		currentHeight := rand.Intn(3000000)
 		latestHeight := currentHeight
 		for currentHeight < totalPieces4 {
-			maxGrowth := multiplier * currentHeight
-			randomGrowth := rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+			maxGrowth := int((multiplier * float64(currentHeight)))
+			randomGrowth := 0
+			if int(math.Abs(float64(maxGrowth-minGrowth+1))) == 0 {
+				randomGrowth = minGrowth
+			} else {
+				randomGrowth = rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+			}
 			currentHeight += randomGrowth
 			if currentHeight < totalPieces4 {
 				latestHeight = currentHeight

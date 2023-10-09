@@ -13,7 +13,7 @@ const (
 
 func Scenario1() {
 	minGrowth := 100
-	multiplier := 2
+	multiplier := 1.0
 	pieces := make([]int, totalPieces2)
 	farmers := make([]int, 2*farmerCount)
 	// checkPoints := make([]int, 11)
@@ -28,8 +28,13 @@ func Scenario1() {
 			currentHeight := rand.Intn(1000000)
 			latestHeight := currentHeight
 			for currentHeight < totalPieces {
-				maxGrowth := multiplier * currentHeight
-				randomGrowth := rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				maxGrowth := int((multiplier * float64(currentHeight)))
+				randomGrowth := 0
+				if int(math.Abs(float64(maxGrowth-minGrowth+1))) == 0 {
+					randomGrowth = minGrowth
+				} else {
+					randomGrowth = rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				}
 				currentHeight += randomGrowth
 				if currentHeight < totalPieces2/2 {
 					latestHeight = currentHeight
@@ -59,8 +64,13 @@ func Scenario1() {
 			currentHeight := rand.Intn(2000000) - 1000000
 			latestHeight := currentHeight
 			for currentHeight < totalPieces {
-				maxGrowth := multiplier * currentHeight
-				randomGrowth := rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				maxGrowth := int((multiplier * float64(currentHeight)))
+				randomGrowth := 0
+				if int(math.Abs(float64(maxGrowth-minGrowth+1))) == 0 {
+					randomGrowth = minGrowth
+				} else {
+					randomGrowth = rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				}
 				currentHeight += randomGrowth
 				if currentHeight < totalPieces2/2 {
 					latestHeight = currentHeight

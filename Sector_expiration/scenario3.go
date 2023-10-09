@@ -13,7 +13,7 @@ const (
 
 func Scenario3() {
 	minGrowth := 100
-	multiplier := 2
+	multiplier := 4.0
 	pieces := make([]int, totalPieces3)
 	farmers := make([]int, 3*farmerCount)
 	checkPoints := make([]int, 11)
@@ -28,8 +28,13 @@ func Scenario3() {
 			currentHeight := rand.Intn(1000000)
 			latestHeight := currentHeight
 			for currentHeight < totalPieces {
-				maxGrowth := multiplier * currentHeight
-				randomGrowth := rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				maxGrowth := int((multiplier * float64(currentHeight)))
+				randomGrowth := 0
+				if int(math.Abs(float64(maxGrowth-minGrowth+1))) == 0 {
+					randomGrowth = minGrowth
+				} else {
+					randomGrowth = rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				}
 				currentHeight += randomGrowth
 				if currentHeight < totalPieces3/3 {
 					latestHeight = currentHeight
@@ -59,8 +64,13 @@ func Scenario3() {
 			currentHeight := rand.Intn(2000000) - 1000000
 			latestHeight := currentHeight
 			for currentHeight < totalPieces {
-				maxGrowth := multiplier * currentHeight
-				randomGrowth := rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				maxGrowth := int((multiplier * float64(currentHeight)))
+				randomGrowth := 0
+				if int(math.Abs(float64(maxGrowth-minGrowth+1))) == 0 {
+					randomGrowth = minGrowth
+				} else {
+					randomGrowth = rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				}
 				currentHeight += randomGrowth
 				if currentHeight < totalPieces3/3 {
 					latestHeight = currentHeight
@@ -90,8 +100,13 @@ func Scenario3() {
 			currentHeight := rand.Intn(3000000) - 2000000
 			latestHeight := currentHeight
 			for currentHeight < totalPieces {
-				maxGrowth := multiplier * currentHeight
-				randomGrowth := rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				maxGrowth := int((multiplier * float64(currentHeight)))
+				randomGrowth := 0
+				if int(math.Abs(float64(maxGrowth-minGrowth+1))) == 0 {
+					randomGrowth = minGrowth
+				} else {
+					randomGrowth = rand.Intn(int(math.Abs(float64(maxGrowth-minGrowth+1)))) + minGrowth
+				}
 				currentHeight += randomGrowth
 				if currentHeight < totalPieces3/3 {
 					latestHeight = currentHeight
