@@ -36,13 +36,13 @@ func main() {
 
 ## Running the Simulation
 
-After setting the desired parameters, you can run the simulation by executing the `main.go` file. The simulation will output the metrics for each stage and save them to a CSV file named `metrics.csv`.
+After setting the desired parameters, you can run the simulation by executing the `main.go` file. The simulation will output the metrics for each stage and save them to a CSV file named `benchmark.csv`.
 
 ```sh
 go run .
 ```
 
-The `metrics.csv` file will contain the following columns:
+The `benchmark.csv` file will contain the following columns:
 
 - **ShardID**: The ID of the shard.
 - **BlockID**: The ID of the block.
