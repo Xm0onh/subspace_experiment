@@ -19,7 +19,7 @@ func main() {
     numOperators :=             // Total number of operators
     numBlocks :=                // Number of blocks to build
     bundlesPerShard := []int{}  // Number of bundles in each shard block
-    bandwidth :=                //  bundles per second
+    bandwidth :=                // Bundles per second
 
     simulateNetwork(numShards, numFarmers, numOperators, numBlocks, bundlesPerShard, bandwidth)
 }
