@@ -52,6 +52,12 @@ type Metric struct {
 	TimeTaken float64
 }
 
+// Global variables for bundle sizes
+var (
+	bundleBodySize   = 1 * 1024 * 1024 * 8 // 1 MB in bits
+	bundleHeaderSize = 10 * 1024 * 8       // 10 KB in bits
+)
+
 func chooseLeader(farmers []*Farmer, rng *rand.Rand) *Farmer {
 	return farmers[rng.Intn(len(farmers))]
 }
@@ -64,13 +70,18 @@ func randomNetworkDelay() time.Duration {
 	return time.Duration(rand.Intn(300)) * time.Millisecond
 }
 
+func timeToSendData(sizeBits, bandwidthMbps int) time.Duration {
+	bandwidthBps := bandwidthMbps * 1024 * 1024
+	return time.Duration(float64(sizeBits) / float64(bandwidthBps) * float64(time.Second))
+}
+
 // Function for the operator to send bundle headers to all farmers
 func (op *Operator) sendBundleHeaders(header BundleHeader, allFarmers []*Farmer, wg *sync.WaitGroup, metrics *[]Metric, shardID int, blockID int) {
 	defer wg.Done()
 
 	startTime := time.Now()
 	for _, farmer := range allFarmers {
-		time.Sleep(randomNetworkDelay() / 10) // Headers are smaller, so simulate faster sending time
+		time.Sleep(timeToSendData(bundleHeaderSize, op.Bandwidth)) // Simulate sending header time based on bandwidth
 		farmer.mu.Lock()
 		farmer.Headers = append(farmer.Headers, header)
 		farmer.mu.Unlock()
@@ -82,12 +93,13 @@ func (op *Operator) sendBundleHeaders(header BundleHeader, allFarmers []*Farmer,
 	*metrics = append(*metrics, Metric{shardID, blockID, "Header", elapsed.Seconds()})
 }
 
+// Function for the operator to send bundles to farmers within the shard
 func (op *Operator) sendBundles(bundle Bundle, wg *sync.WaitGroup, metrics *[]Metric, shardID int, blockID int, bundleTimes *sync.Map) {
 	defer wg.Done()
 
 	startTime := time.Now()
 	for _, farmer := range op.Shard.Farmers {
-		time.Sleep(randomNetworkDelay())
+		time.Sleep(timeToSendData(bundleBodySize, op.Bandwidth)) // Simulate sending bundle time based on bandwidth
 		farmer.mu.Lock()
 		farmer.Bundles = append(farmer.Bundles, bundle)
 		farmer.mu.Unlock()
@@ -283,8 +295,8 @@ func main() {
 	numFarmers := 5
 	numOperators := 2
 	numBlocks := 1                 // Number of blocks to build
-	bundlesPerShard := []int{1, 5} // Number of bundles in each shard block
-	bandwidth := 2                 // bundles per second
+	bundlesPerShard := []int{1, 1} // Number of bundles in each shard block
+	bandwidth := 10                // Bandwidth in Mbps
 
 	simulateNetwork(numShards, numFarmers, numOperators, numBlocks, bundlesPerShard, bandwidth)
 }

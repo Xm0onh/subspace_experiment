@@ -7,7 +7,7 @@ The simulation allows you to configure the following parameters:
 3. **Number of Operators (`numOperators`)**: The total number of operators managing the shards.
 4. **Number of Blocks (`numBlocks`)**: The total number of blocks to be produced in the simulation in each shard (shard blocks).
 5. **Bundles per Shard (`bundlesPerShard`)**: An array specifying the number of bundles to be included in each shard's block.
-6. **Bandwidth (`bandwidth`)**: The bandwidth limitation, defining how many bundles can be sent per second.
+6. **Bandwidth (`bandwidth`)**: The bandwidth limitation in Mbps.
 
 ## How to Change Parameters
 
@@ -19,7 +19,7 @@ func main() {
     numOperators :=             // Total number of operators
     numBlocks :=                // Number of blocks to build
     bundlesPerShard := []int{}  // Number of bundles in each shard block
-    bandwidth :=                // Bundles per second
+    bandwidth :=                // Bandwidth in Mbps
 
     simulateNetwork(numShards, numFarmers, numOperators, numBlocks, bundlesPerShard, bandwidth)
 }
@@ -32,7 +32,7 @@ func main() {
 3. **`numOperators`**: Specify the number of operators.
 4. **`numBlocks`**: Set this to the number of blocks to be produced. 
 5. **`bundlesPerShard`**: This is an array where each element specifies the number of bundles for each shard's block. For example, `bundlesPerShard := []int{3, 4, 5}` means the first shard will have 3 bundles per block, the second shard will have 4, and the third will have 5.
-6. **`bandwidth`**: Define the bandwidth limitation. For example, `bandwidth := 5` means five bundles can be sent per second.
+6. **`bandwidth`**: Define the bandwidth limitation. For example, `bandwidth := 5` means 5 Mbps.
 
 ## Running the Simulation
 
